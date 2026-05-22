@@ -76,16 +76,19 @@ jobs:
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-latest-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-1-version }}
           additional-tags: |
+            latest-1
             v${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
             v${{ needs.preflight.outputs.wasmtime-latest-1-version-minor }}
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-version }}
           additional-tags: |
+            lts
             v${{ needs.preflight.outputs.wasmtime-lts-version-major }}
             v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-lts-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           additional-tags: |
+            lts-1
             v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
             v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
