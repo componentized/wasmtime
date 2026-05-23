@@ -34,6 +34,8 @@ jobs:
         echo "git-ref=${git_ref}" | tee -a "${GITHUB_OUTPUT}"
         echo "git-ref-short=${git_ref:0:7}" | tee -a "${GITHUB_OUTPUT}"
         echo "git-date=${git_date:0:10}" | tee -a "${GITHUB_OUTPUT}"
+      env:
+        GH_TOKEN: ${{ github.token }}
 
   build:
     name: Build
