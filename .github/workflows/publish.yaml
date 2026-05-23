@@ -41,9 +41,9 @@ concurrency:
 
 env:
   image: "${{
-      case(inputs.repository,
-        format('ghcr.io/{0}/{1}:{2}', github.repository, inputs.repository, inputs.tag),
-        format('ghcr.io/{0}:{1}', github.repository, inputs.tag)
+      case(inputs.repository == '',
+        format('ghcr.io/{0}:{1}', github.repository, inputs.tag),
+        format('ghcr.io/{0}/{1}:{2}', github.repository, inputs.repository, inputs.tag)
       )
     }}"
 
