@@ -11,6 +11,12 @@ on:
         description: rust version to build
         required: true
         type: string
+      tag:
+        description: primary image tag to publish
+        type: string
+      additional-tags:
+        description: new line delimited set of additional tags to add to the published image
+        type: string
       publish:
         description: publish built image
         required: true
@@ -22,15 +28,15 @@ on:
       concurrency-group:
         description: run a single workflow at a time for workflows with the same group
         type: string
-      additional-tags:
-        description: new line delimited set of additional tag to add to the published image
-        type: string
   workflow_call:
     inputs: *workflow-inputs
 
 concurrency:
   group: ${{ inputs.concurrency-group }}
   queue: max
+
+env:
+  image: "ghcr.io/${{ github.repository }}:${{ inputs.tag }}"
 
 jobs:
 
@@ -46,7 +52,9 @@ jobs:
     - name: Check for existing image
       id: existing
       run: |
-        digest="$(crane digest "ghcr.io/${{ github.repository }}:v${{ inputs.wasmtime-version }}" || echo -n '')"
+        set -euo pipefail
+
+        digest="$(crane digest "${{ env.image }}" || echo -n '')"
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
   build:
@@ -75,7 +83,7 @@ jobs:
 
         docker buildx build \
           --builder container \
-          --output type=oci,dest="./wasmtime-v${{ inputs.wasmtime-version }}-${{ matrix.arch }}.tar" \
+          --output type=oci,dest="./wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}.tar" \
           --platform "linux/${{ matrix.arch }}" \
           --build-arg "rust=${{ inputs.rust-version }}" \
           --build-arg "wasmtime=${{ inputs.wasmtime-version }}" \
@@ -83,12 +91,12 @@ jobs:
           --sbom=false \
           .
 
-        mkdir "wasmtime-v${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
-        tar -xvf "wasmtime-v${{ inputs.wasmtime-version }}-${{ matrix.arch }}.tar" -C "wasmtime-v${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
+        mkdir "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
+        tar -xvf "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}.tar" -C "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
     - uses: actions/upload-artifact@v7
       with:
-        name: "wasmtime-v${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
-        path: "wasmtime-v${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
+        name: "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
+        path: "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
         retention-days: 7
 
   assemble:
@@ -104,23 +112,23 @@ jobs:
     - name: Download staged image (amd64)
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-v${{ inputs.wasmtime-version }}-amd64"
-        path: "wasmtime-v${{ inputs.wasmtime-version }}-amd64"
+        name: "wasmtime-${{ inputs.wasmtime-version }}-amd64"
+        path: "wasmtime-${{ inputs.wasmtime-version }}-amd64"
     - name: Download staged image (arm64)
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-v${{ inputs.wasmtime-version }}-arm64"
-        path: "wasmtime-v${{ inputs.wasmtime-version }}-arm64"
+        name: "wasmtime-${{ inputs.wasmtime-version }}-arm64"
+        path: "wasmtime-${{ inputs.wasmtime-version }}-arm64"
     - name: Assemble
       run: |
         set -euo pipefail
 
         crane push --index \
-          "wasmtime-v${{ inputs.wasmtime-version }}-amd64" \
+          "wasmtime-${{ inputs.wasmtime-version }}-amd64" \
           registry.local/wasmtime:amd64
 
         crane push --index \
-          "wasmtime-v${{ inputs.wasmtime-version }}-arm64" \
+          "wasmtime-${{ inputs.wasmtime-version }}-arm64" \
           registry.local/wasmtime:arm64
 
         crane index append \
@@ -130,11 +138,11 @@ jobs:
 
         crane pull --format oci \
           registry.local/wasmtime \
-          "wasmtime-v${{ inputs.wasmtime-version }}"
+          "wasmtime-${{ inputs.wasmtime-version }}"
     - uses: actions/upload-artifact@v7
       with:
-        name: "wasmtime-v${{ inputs.wasmtime-version }}"
-        path: "wasmtime-v${{ inputs.wasmtime-version }}"
+        name: "wasmtime-${{ inputs.wasmtime-version }}"
+        path: "wasmtime-${{ inputs.wasmtime-version }}"
         retention-days: 7
 
   test:
@@ -156,11 +164,11 @@ jobs:
     - name: Download staged image
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-v${{ inputs.wasmtime-version }}"
-        path: "wasmtime-v${{ inputs.wasmtime-version }}"
+        name: "wasmtime-${{ inputs.wasmtime-version }}"
+        path: "wasmtime-${{ inputs.wasmtime-version }}"
     - name: Relocate image
       run: |
-        crane push --index "wasmtime-v${{ inputs.wasmtime-version }}" registry.local/wasmtime
+        crane push --index "wasmtime-${{ inputs.wasmtime-version }}" registry.local/wasmtime
     # TODO test image
     - run: docker run --rm registry.local/wasmtime wasmtime --version
 
@@ -179,8 +187,8 @@ jobs:
     - name: Download staged image
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-v${{ inputs.wasmtime-version }}"
-        path: "wasmtime-v${{ inputs.wasmtime-version }}"
+        name: "wasmtime-${{ inputs.wasmtime-version }}"
+        path: "wasmtime-${{ inputs.wasmtime-version }}"
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v4
       with:
@@ -190,8 +198,8 @@ jobs:
     - name: Publish
       run: |
         crane push --index \
-          "wasmtime-v${{ inputs.wasmtime-version }}" \
-          "ghcr.io/${{ github.repository }}:v${{ inputs.wasmtime-version }}"
+          "wasmtime-${{ inputs.wasmtime-version }}" \
+          "${{ env.image }}"
     - name: Additional tags
       if: inputs.additional-tags
       run: |
@@ -201,6 +209,6 @@ jobs:
 
         while IFS= read -r tag; do
           crane tag \
-            "ghcr.io/${{ github.repository }}:v${{ inputs.wasmtime-version }}" \
+            "${{ env.image }}" \
             "${tag}"
         done <<< "${additional_tags}"
