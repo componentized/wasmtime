@@ -69,36 +69,41 @@ jobs:
       matrix:
         include:
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-version }}
+          tag: v${{ needs.preflight.outputs.wasmtime-latest-version }}
           additional-tags: |
-            latest
-            v${{ needs.preflight.outputs.wasmtime-latest-version-major }}
             v${{ needs.preflight.outputs.wasmtime-latest-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-latest-version-major }}
+            latest
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-latest-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-1-version }}
+          tag: v${{ needs.preflight.outputs.wasmtime-latest-1-version }}
           additional-tags: |
-            latest-1
-            v${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
             v${{ needs.preflight.outputs.wasmtime-latest-1-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
+            latest-1
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+          tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
           additional-tags: |
-            lts
             v${{ needs.preflight.outputs.wasmtime-lts-version-major }}
             v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
+            lts
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-lts-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}  
           additional-tags: |
-            lts-1
-            v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
             v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
+            lts-1
           concurrency-group: ${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
       wasmtime-version: "${{ matrix.wasmtime-version }}"
+      tag: "${{ matrix.tag }}"
+      additional-tags: "${{ matrix.additional-tags }}"
       publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
       force: false
-      additional-tags: "${{ matrix.additional-tags }}"
       concurrency-group: "${{ matrix.concurrency-group }}"
     secrets: inherit
 
