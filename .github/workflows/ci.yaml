@@ -8,6 +8,7 @@ on:
   pull_request: {}
 
 jobs:
+
   preflight:
     name: Preflight
     runs-on: ubuntu-latest
@@ -58,8 +59,9 @@ jobs:
         echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-version-major=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-version-minor=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
-  build:
-    name: Build
+
+  publish:
+    name: Publish
     permissions:
       contents: write
       packages: write
@@ -74,28 +76,24 @@ jobs:
             v${{ needs.preflight.outputs.wasmtime-latest-version-minor }}
             v${{ needs.preflight.outputs.wasmtime-latest-version-major }}
             latest
-          concurrency-group: ${{ needs.preflight.outputs.wasmtime-latest-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-1-version }}
           tag: v${{ needs.preflight.outputs.wasmtime-latest-1-version }}
           additional-tags: |
             v${{ needs.preflight.outputs.wasmtime-latest-1-version-minor }}
             v${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
             latest-1
-          concurrency-group: ${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-version }}
           tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
           additional-tags: |
             v${{ needs.preflight.outputs.wasmtime-lts-version-major }}
             v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
             lts
-          concurrency-group: ${{ needs.preflight.outputs.wasmtime-lts-version-major }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}  
           additional-tags: |
             v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
             v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
             lts-1
-          concurrency-group: ${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
@@ -103,15 +101,13 @@ jobs:
       tag: "${{ matrix.tag }}"
       additional-tags: "${{ matrix.additional-tags }}"
       publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
-      force: false
-      concurrency-group: "${{ matrix.concurrency-group }}"
     secrets: inherit
 
   done:
     # used as a non-matrix job for protected branches
     name: Done
-    needs: build
-    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    needs: publish
+    if: always() && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
     - run: echo "That's all folks"

@@ -1,42 +1,51 @@
 name: Publish
 
 on:
-  workflow_dispatch:
-    inputs: &workflow-inputs
+  workflow_call:
+    inputs:
       wasmtime-version:
         description: wasmtime version to build
         required: true
         type: string
+      wasmtime-source:
+        description: wasmtime source. 'crate' or 'git'
+        type: string
+        default: crate
       rust-version:
         description: rust version to build
         required: true
         type: string
+      repository:
+        description: nested image repository to publish into
+        type: string
+        default: ""
       tag:
         description: primary image tag to publish
+        required: true
         type: string
       additional-tags:
         description: new line delimited set of additional tags to add to the published image
         type: string
       publish:
         description: publish built image
-        required: true
         type: boolean
+        default: true
       force:
         description: force overwriting an existing image
-        required: true
         type: boolean
-      concurrency-group:
-        description: run a single workflow at a time for workflows with the same group
-        type: string
-  workflow_call:
-    inputs: *workflow-inputs
+        default: false
 
 concurrency:
-  group: ${{ inputs.concurrency-group }}
+  group: ${{ inputs.tag }}
   queue: max
 
 env:
-  image: "ghcr.io/${{ github.repository }}:${{ inputs.tag }}"
+  image: "${{
+      case(inputs.repository,
+        format('ghcr.io/{0}/{1}:{2}', github.repository, inputs.repository, inputs.tag),
+        format('ghcr.io/{0}:{1}', github.repository, inputs.tag)
+      )
+    }}"
 
 jobs:
 
@@ -58,7 +67,7 @@ jobs:
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
   build:
-    name: Build wasmtime image
+    name: Build
     needs: preflight
     if: ${{ inputs.force || ! needs.preflight.outputs.existing-digest }}
     strategy:
@@ -86,6 +95,7 @@ jobs:
           --output type=oci,dest="./wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}.tar" \
           --platform "linux/${{ matrix.arch }}" \
           --build-arg "rust=${{ inputs.rust-version }}" \
+          --build-arg "wasmtime_source=${{ inputs.wasmtime-source }}" \
           --build-arg "wasmtime=${{ inputs.wasmtime-version }}" \
           --provenance false \
           --sbom=false \
@@ -100,7 +110,7 @@ jobs:
         retention-days: 7
 
   assemble:
-    name: Assemble image
+    name: Assemble
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -173,7 +183,7 @@ jobs:
     - run: docker run --rm registry.local/wasmtime wasmtime --version
 
   publish:
-    name: Publish wasmtime image
+    name: Publish
     needs: test
     if: inputs.publish
     runs-on: ubuntu-latest
@@ -195,7 +205,7 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Publish
+    - name: Push
       run: |
         crane push --index \
           "wasmtime-${{ inputs.wasmtime-version }}" \

@@ -1,0 +1,58 @@
+name: Publish dev builds
+
+on:
+  schedule:
+  - cron: "51 * * * *"
+
+jobs:
+
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    outputs:
+      rust-version: ${{ steps.versions.outputs.rust-version }}
+      git-ref: ${{ steps.versions.outputs.git-ref }}
+      git-ref-short: ${{ steps.versions.outputs.git-ref-short }}
+      git-date: ${{ steps.versions.outputs.git-date }}
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - name: Resolve versions
+      id: versions
+      run: |
+        set -euo pipefail
+
+        echo "rust-version=$(cargo --version | cut -d' ' -f2)" | tee -a "${GITHUB_OUTPUT}"
+        git_ref=$(gh api repos/bytecodealliance/wasmtime/git/ref/tags/dev --template '{{.object.sha}}')
+        git_date=$(gh api repos/bytecodealliance/wasmtime/commits/${git_ref} --template '{{.commit.committer.date}}')
+        echo "git-ref=${git_ref}" | tee -a "${GITHUB_OUTPUT}"
+        echo "git-ref-short=${git_ref:0:7}" | tee -a "${GITHUB_OUTPUT}"
+        echo "git-date=${git_date:0:10}" | tee -a "${GITHUB_OUTPUT}"
+
+  build:
+    name: Build
+    permissions:
+      contents: write
+      packages: write
+    needs: preflight
+    uses: ./.github/workflows/publish.yaml
+    with:
+      rust-version: "${{ needs.preflight.outputs.rust-version }}"
+      wasmtime-source: git
+      wasmtime-version: ${{ needs.preflight.outputs.git-ref }}
+      repository: dev
+      tag: dev-${{ needs.preflight.outputs.git-ref }}
+      additional-tags: |
+        dev-${{ needs.preflight.outputs.git-ref-short }}
+        dev-${{ needs.preflight.outputs.git-date }}
+        latest
+    secrets: inherit
+
+  done:
+    # used as a non-matrix job for protected branches
+    name: Done
+    needs: build
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo "That's all folks"
