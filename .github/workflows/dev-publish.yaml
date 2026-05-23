@@ -3,6 +3,12 @@ name: Publish dev builds
 on:
   schedule:
   - cron: "51 * * * *"
+  workflow_dispatch:
+    inputs:
+      git-ref:
+        description: git-ref version to build
+        type: string
+        default: ref/tags/dev
 
 jobs:
 
@@ -23,7 +29,7 @@ jobs:
         set -euo pipefail
 
         echo "rust-version=$(cargo --version | cut -d' ' -f2)" | tee -a "${GITHUB_OUTPUT}"
-        git_ref=$(gh api repos/bytecodealliance/wasmtime/git/ref/tags/dev --template '{{.object.sha}}')
+        git_ref=$(gh api repos/bytecodealliance/wasmtime/git/${{ inputs.git-ref || 'ref/tags/dev' }} --template '{{.object.sha}}')
         git_date=$(gh api repos/bytecodealliance/wasmtime/commits/${git_ref} --template '{{.commit.committer.date}}')
         echo "git-ref=${git_ref}" | tee -a "${GITHUB_OUTPUT}"
         echo "git-ref-short=${git_ref:0:7}" | tee -a "${GITHUB_OUTPUT}"
