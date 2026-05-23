@@ -1,2 +1,3 @@
 /target
 /wasmtime*
+.DS_Store
