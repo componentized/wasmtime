@@ -183,7 +183,7 @@ jobs:
           registry.local/wasmtime
     # TODO test image
     - name: Run container
-      run: docker run --rm registry.local/wasmtime wasmtime --version
+      run: docker run --rm registry.local/wasmtime
     - name: Check expected images in index
       run: |
         set -euo pipefail
