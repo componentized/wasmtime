@@ -13,12 +13,16 @@ jobs:
     outputs:
       rust-version: ${{ steps.versions.outputs.rust-version }}
       wasmtime-stable-changed: ${{ steps.filter.outputs.wasmtime-stable }}
+      wasmtime-stable-git-sha: ${{ steps.versions.outputs.wasmtime-stable-git-sha }}
       wasmtime-stable-version: ${{ steps.versions.outputs.wasmtime-stable-version }}
       wasmtime-stable-1-changed: ${{ steps.filter.outputs.wasmtime-stable-1 }}
+      wasmtime-stable-1-git-sha: ${{ steps.versions.outputs.wasmtime-stable-1-git-sha }}
       wasmtime-stable-1-version: ${{ steps.versions.outputs.wasmtime-stable-1-version }}
       wasmtime-lts-changed: ${{ steps.filter.outputs.wasmtime-lts }}
+      wasmtime-lts-git-sha: ${{ steps.versions.outputs.wasmtime-lts-git-sha }}
       wasmtime-lts-version: ${{ steps.versions.outputs.wasmtime-lts-version }}
       wasmtime-lts-1-changed: ${{ steps.filter.outputs.wasmtime-lts-1 }}
+      wasmtime-lts-1-git-sha: ${{ steps.versions.outputs.wasmtime-lts-1-git-sha }}
       wasmtime-lts-1-version: ${{ steps.versions.outputs.wasmtime-lts-1-version }}
       common-changed: ${{ steps.filter.outputs.common }}
     steps:
@@ -47,13 +51,30 @@ jobs:
         echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
         # stable
-        echo "wasmtime-stable-version=$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
+        wasmtime_stable_version="$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_stable_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/ref/tags/${wasmtime_stable_version}" --template '{{.sha}}'))"
+        echo "wasmtime-stable-version=${wasmtime_stable_version}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-stable-git-sha=${wasmtime_stable_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+
         # stable, minus 1
-        echo "wasmtime-stable-1-version=$(cd versions/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
+        wasmtime_stable_1_version="$(cd versions/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_stable_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/ref/tags/${wasmtime_stable_1_version}" --template '{{.sha}}'))"
+        echo "wasmtime-stable-1-version=${wasmtime_stable_1_version}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-stable-1-git-sha=${wasmtime_stable_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+
         # lts
-        echo "wasmtime-lts-version=$(cd versions/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
+        wasmtime_lts_version="$(cd versions/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_lts_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/ref/tags/${wasmtime_lts_version}" --template '{{.sha}}'))"
+        echo "wasmtime-lts-version=${wasmtime_lts_version}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-lts-git-sha=${wasmtime_lts_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+
         # lts, minus 1
-        echo "wasmtime-lts-1-version=$(cd versions/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
+        wasmtime_lts_1_version="$(cd versions/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_lts_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/ref/tags/${wasmtime_lts_1_version}" --template '{{.sha}}'))"
+        echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-lts-1-git-sha=${wasmtime_lts_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+      env:
+        GH_TOKEN: ${{ github.token }}
 
   publish:
     name: Publish
@@ -65,19 +86,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
           force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
           force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
-      wasmtime-version: "${{ matrix.wasmtime-version }}"
-      tag: "v${{ matrix.wasmtime-version }}"
+      wasmtime-git-sha: "${{ matrix.wasmtime-git-sha }}"
+      tag: "${{ matrix.tag }}"
       publish: false
       force: ${{ matrix.force }}
     secrets: inherit

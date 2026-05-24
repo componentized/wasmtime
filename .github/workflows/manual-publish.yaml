@@ -3,18 +3,10 @@ name: Manual publish
 on:
   workflow_dispatch:
     inputs:
-      wasmtime-version:
-        description: wasmtime version to build
+      wasmtime-git-ref:
+        description: wasmtime git ref to build ('refs/tag/{tag}', 'refs/heads/{branch}')
         required: true
         type: string
-      wasmtime-source:
-        description: wasmtime source. 'crate' or 'git'
-        required: true
-        type: choice
-        default: crate
-        options:
-        - crate
-        - git
       repository:
         description: image repository to publish into
         type: string
@@ -37,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rust-version: ${{ steps.versions.outputs.rust-version }}
+      wasmtime-git-sha: ${{ steps.versions.outputs.wasmtime-git-sha }}
       additional-tags: ${{ steps.versions.outputs.additional-tags }}
     steps:
     - uses: actions/checkout@v6
@@ -46,10 +39,16 @@ jobs:
         set -euo pipefail
 
         echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
+
+        wasmtime_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-ref }}" --template '{{.sha}}'))"
+        echo "wasmtime-git-sha=${wasmtime_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+
         # convert space delimited to new-line delimited
         echo 'additional-tags<<EOF' | tee -a "${GITHUB_OUTPUT}"
         echo "${{ inputs.additional-tags }}" | perl -pe 's/\s+/\n/g' | tee -a "${GITHUB_OUTPUT}"
         echo 'EOF' | tee -a "${GITHUB_OUTPUT}"
+      env:
+        GH_TOKEN: ${{ github.token }}
 
   publish:
     name: Publish
@@ -59,8 +58,7 @@ jobs:
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
-      wasmtime-source: "${{ inputs.wasmtime-source }}"
-      wasmtime-version: "${{ inputs.wasmtime-version }}"
+      wasmtime-git-sha: "${{ needs.preflight.outputs.wasmtime-git-sha }}"
       repository: "${{ inputs.repository }}"
       tag: "${{ inputs.tag }}"
       additional-tags: "${{ needs.preflight.outputs.additional-tags }}"

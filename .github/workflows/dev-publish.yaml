@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rust-version: ${{ steps.versions.outputs.rust-version }}
-      git-ref: ${{ steps.versions.outputs.git-ref }}
-      git-ref-short: ${{ steps.versions.outputs.git-ref-short }}
+      git-sha: ${{ steps.versions.outputs.git-sha }}
+      git-sha-short: ${{ steps.versions.outputs.git-sha-short }}
       git-date: ${{ steps.versions.outputs.git-date }}
     steps:
     - uses: actions/checkout@v6
@@ -28,10 +28,12 @@ jobs:
         set -euo pipefail
 
         echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
-        git_ref=$(gh api repos/bytecodealliance/wasmtime/git/${{ inputs.git-ref || 'ref/tags/dev' }} --template '{{.object.sha}}')
-        git_date=$(gh api repos/bytecodealliance/wasmtime/commits/${git_ref} --template '{{.commit.committer.date}}')
-        echo "git-ref=${git_ref}" | tee -a "${GITHUB_OUTPUT}"
-        echo "git-ref-short=${git_ref:0:7}" | tee -a "${GITHUB_OUTPUT}"
+
+        git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/${{ inputs.git-ref || 'ref/tags/dev' }} --template '{{.sha}} {{.commit.committer.date}}')
+        git_sha="$(echo "${git_commit}" | cut -d' ' -f1)"
+        git_date="$(echo "${git_commit}" | cut -d' ' -f2)"
+        echo "git-sha=${git_sha}" | tee -a "${GITHUB_OUTPUT}"
+        echo "git-sha-short=${git_sha:0:7}" | tee -a "${GITHUB_OUTPUT}"
         echo "git-date=${git_date:0:10}" | tee -a "${GITHUB_OUTPUT}"
       env:
         GH_TOKEN: ${{ github.token }}
@@ -45,12 +47,11 @@ jobs:
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
-      wasmtime-source: git
-      wasmtime-version: ${{ needs.preflight.outputs.git-ref }}
+      wasmtime-git-sha: ${{ needs.preflight.outputs.git-sha }}
       repository: dev
-      tag: dev-${{ needs.preflight.outputs.git-ref }}
+      tag: dev-${{ needs.preflight.outputs.git-sha }}
       additional-tags: |
-        dev-${{ needs.preflight.outputs.git-ref-short }}
+        dev-${{ needs.preflight.outputs.git-sha-short }}
         dev-${{ needs.preflight.outputs.git-date }}
         dev
         latest
