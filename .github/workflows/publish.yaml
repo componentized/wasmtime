@@ -191,8 +191,8 @@ jobs:
         listing=$(crane index list registry.local/wasmtime)
         echo "${listing}"
 
-        echo "${listing}" | grep linux/amd64
-        echo "${listing}" | grep linux/arm64
+        echo "${listing}" | grep -q linux/amd64
+        echo "${listing}" | grep -q linux/arm64
 
   publish:
     name: Publish
