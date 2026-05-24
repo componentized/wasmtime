@@ -8,7 +8,7 @@ on:
       git-ref:
         description: git-ref version to build
         type: string
-        default: ref/tags/dev
+        default: refs/tags/dev
 
 jobs:
 
@@ -29,7 +29,7 @@ jobs:
 
         echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
-        git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/${{ inputs.git-ref || 'ref/tags/dev' }} --template '{{.sha}} {{.commit.committer.date}}')
+        git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/${{ inputs.git-ref || 'refs/tags/dev' }} --template '{{.sha}} {{.commit.committer.date}}')
         git_sha="$(echo "${git_commit}" | cut -d' ' -f1)"
         git_date="$(echo "${git_commit}" | cut -d' ' -f2)"
         echo "git-sha=${git_sha}" | tee -a "${GITHUB_OUTPUT}"

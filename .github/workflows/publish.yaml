@@ -32,7 +32,7 @@ on:
         default: false
 
 concurrency:
-  group: ${{ case(inputs.publish, inputs.tag, format('run-{0}-v{1}', github.run_id, inputs.tag)) }}
+  group: ${{ case(inputs.publish, inputs.tag, format('run-{0}-{1}', github.run_id, inputs.tag)) }}
   queue: max
 
 env:
