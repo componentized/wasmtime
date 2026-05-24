@@ -1,0 +1,93 @@
+name: Push
+
+on:
+  pull_request: {}
+
+jobs:
+
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      rust-version: ${{ steps.versions.outputs.rust-version }}
+      wasmtime-latest-changed: ${{ steps.filter.outputs.wasmtime-latest }}
+      wasmtime-latest-version: ${{ steps.versions.outputs.wasmtime-latest-version }}
+      wasmtime-latest-1-changed: ${{ steps.filter.outputs.wasmtime-latest-1 }}
+      wasmtime-latest-1-version: ${{ steps.versions.outputs.wasmtime-latest-1-version }}
+      wasmtime-lts-changed: ${{ steps.filter.outputs.wasmtime-lts }}
+      wasmtime-lts-version: ${{ steps.versions.outputs.wasmtime-lts-version }}
+      wasmtime-lts-1-changed: ${{ steps.filter.outputs.wasmtime-lts-1 }}
+      wasmtime-lts-1-version: ${{ steps.versions.outputs.wasmtime-lts-1-version }}
+      common-changed: ${{ steps.filter.outputs.common }}
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions-rust-lang/setup-rust-toolchain@v1
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          common:
+          - '.github/**'
+          - 'Dockerfile'
+          - 'rust-toolchain.toml'
+          wasmtime-latest:
+          - 'versions/latest/**'
+          wasmtime-latest-1:
+          - 'versions/latest-1/**'
+          wasmtime-lts:
+          - 'versions/lts/**'
+          wasmtime-lts-1:
+          - 'versions/lts-1/**'
+    - name: Resolve versions
+      id: versions
+      run: |
+        set -euo pipefail
+
+        echo "rust-version=$(cargo --version | cut -d' ' -f2)" | tee -a "${GITHUB_OUTPUT}"
+
+        # latest
+        echo "wasmtime-latest-version=$(cd versions/latest ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+        # latest minus 1
+        echo "wasmtime-latest-1-version=$(cd versions/latest-1 ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+        # lts
+        echo "wasmtime-lts-version=$(cd versions/lts ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+        # lts minus 1
+        echo "wasmtime-lts-1-version=$(cd versions/lts-1 ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+
+  publish:
+    name: Publish
+    permissions:
+      # called workflow requires write even though it's never used from here
+      packages: write
+    needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-version }}
+          force: ${{ needs.preflight.outputs.wasmtime-latest-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-1-version }}
+          force: ${{ needs.preflight.outputs.wasmtime-latest-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+          force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+    uses: ./.github/workflows/publish.yaml
+    with:
+      rust-version: "${{ needs.preflight.outputs.rust-version }}"
+      wasmtime-version: "${{ matrix.wasmtime-version }}"
+      tag: "pr-${{ github.run_id }}-${{ matrix.wasmtime-version }}"
+      publish: false
+      force: ${{ matrix.force }}
+    secrets: inherit
+
+  done:
+    # used as a non-matrix job for protected branches
+    name: Done
+    needs: publish
+    if: always() && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+    - run: echo "That's all folks"
