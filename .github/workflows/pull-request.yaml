@@ -78,7 +78,7 @@ jobs:
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
       wasmtime-version: "${{ matrix.wasmtime-version }}"
-      tag: "pr-${{ github.run_id }}"
+      tag: "pr-${{ github.run_id }}-${{ matrix.wasmtime-version }}"
       publish: false
       force: ${{ matrix.force }}
     secrets: inherit
