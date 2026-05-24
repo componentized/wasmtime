@@ -1,11 +1,10 @@
-name: CI
+name: Push
 
 on:
   push:
     branches:
     - '**'
     - '!dependabot/**'
-  pull_request: {}
 
 jobs:
 
@@ -100,7 +99,7 @@ jobs:
       wasmtime-version: "${{ matrix.wasmtime-version }}"
       tag: "${{ matrix.tag }}"
       additional-tags: "${{ matrix.additional-tags }}"
-      publish: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+      publish: ${{ github.ref == 'refs/heads/main' }}
     secrets: inherit
 
   done:
