@@ -23,7 +23,6 @@ jobs:
       common-changed: ${{ steps.filter.outputs.common }}
     steps:
     - uses: actions/checkout@v6
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
     - uses: dorny/paths-filter@v3
       id: filter
       with:
@@ -45,16 +44,16 @@ jobs:
       run: |
         set -euo pipefail
 
-        echo "rust-version=$(cargo --version | cut -d' ' -f2)" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
         # latest
-        echo "wasmtime-latest-version=$(cd versions/latest ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-latest-version=$(cd versions/latest ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
         # latest minus 1
-        echo "wasmtime-latest-1-version=$(cd versions/latest-1 ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-latest-1-version=$(cd versions/latest-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
         # lts
-        echo "wasmtime-lts-version=$(cd versions/lts ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-lts-version=$(cd versions/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
         # lts minus 1
-        echo "wasmtime-lts-1-version=$(cd versions/lts-1 ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-lts-1-version=$(cd versions/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
 
   publish:
     name: Publish

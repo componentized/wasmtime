@@ -40,13 +40,12 @@ jobs:
       additional-tags: ${{ steps.versions.outputs.additional-tags }}
     steps:
     - uses: actions/checkout@v6
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
     - name: Resolve versions
       id: versions
       run: |
         set -euo pipefail
 
-        echo "rust-version=$(cargo --version | cut -d' ' -f2)" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
         # convert space delimited to new-line delimited
         echo 'additional-tags<<EOF' >> $GITHUB_OUTPUT
         echo $(echo "${{ inputs.additional-tags }}" | perl -pe 's/\s+/\n/g') >> $GITHUB_OUTPUT

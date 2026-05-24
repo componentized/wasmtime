@@ -27,34 +27,33 @@ jobs:
       wasmtime-lts-1-version-minor: ${{ steps.versions.outputs.wasmtime-lts-1-version-minor }}
     steps:
     - uses: actions/checkout@v6
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
     - name: Resolve versions
       id: versions
       run: |
         set -euo pipefail
 
-        echo "rust-version=$(cargo --version | cut -d' ' -f2)" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
         # latest
-        wasmtime_latest_version="$(cd versions/latest ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')"
+        wasmtime_latest_version="$(cd versions/latest ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         echo "wasmtime-latest-version=${wasmtime_latest_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-latest-version-major=$(echo "${wasmtime_latest_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-latest-version-minor=$(echo "${wasmtime_latest_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
 
         # latest minus 1
-        wasmtime_latest_1_version="$(cd versions/latest-1 ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')"
+        wasmtime_latest_1_version="$(cd versions/latest-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         echo "wasmtime-latest-1-version=${wasmtime_latest_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-latest-1-version-major=$(echo "${wasmtime_latest_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-latest-1-version-minor=$(echo "${wasmtime_latest_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
 
         # lts
-        wasmtime_lts_version="$(cd versions/lts ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')"
+        wasmtime_lts_version="$(cd versions/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         echo "wasmtime-lts-version=${wasmtime_lts_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-version-major=$(echo "${wasmtime_lts_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-version-minor=$(echo "${wasmtime_lts_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
 
         # lts minus 1
-        wasmtime_lts_1_version="$(cd versions/lts-1 ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')"
+        wasmtime_lts_1_version="$(cd versions/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-version-major=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-version-minor=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"

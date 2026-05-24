@@ -22,13 +22,12 @@ jobs:
       git-date: ${{ steps.versions.outputs.git-date }}
     steps:
     - uses: actions/checkout@v6
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
     - name: Resolve versions
       id: versions
       run: |
         set -euo pipefail
 
-        echo "rust-version=$(cargo --version | cut -d' ' -f2)" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
         git_ref=$(gh api repos/bytecodealliance/wasmtime/git/${{ inputs.git-ref || 'ref/tags/dev' }} --template '{{.object.sha}}')
         git_date=$(gh api repos/bytecodealliance/wasmtime/commits/${git_ref} --template '{{.commit.committer.date}}')
         echo "git-ref=${git_ref}" | tee -a "${GITHUB_OUTPUT}"
