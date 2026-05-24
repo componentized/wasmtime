@@ -108,8 +108,8 @@ jobs:
           --build-arg "wasmtime_revision=${{ inputs.wasmtime-git-sha }}" \
           --build-arg "wasmtime_version=${{ inputs.tag }}" \
           --build-arg "wasmtime_commit_date=${{ needs.preflight.outputs.wasmtime-commit-date }}" \
-          --build-arg "base=${{ needs.preflight.outputs.base }}"
-          --build-arg "base_digest=${{ needs.preflight.outputs.base-digest }}"
+          --build-arg "base=${{ needs.preflight.outputs.base }}" \
+          --build-arg "base_digest=${{ needs.preflight.outputs.base-digest }}" \
           --provenance false \
           --sbom false \
           .
