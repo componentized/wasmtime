@@ -81,35 +81,40 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
-          tag: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
           additional-tags: |
-            ${{ needs.preflight.outputs.wasmtime-stable-version-minor }}
-            ${{ needs.preflight.outputs.wasmtime-stable-version-major }}
+            v${{ needs.preflight.outputs.wasmtime-stable-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-stable-version-major }}
             stable
             latest
-        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
-          tag: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
           additional-tags: |
-            ${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}
-            ${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}
+            v${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}
             stable-1
             latest-1
-        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
-          tag: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
           additional-tags: |
-            ${{ needs.preflight.outputs.wasmtime-lts-version-major }}
-            ${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-lts-version-major }}
+            v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
             lts
-        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
-          tag: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}  
+        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
+          tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}  
           additional-tags: |
-            ${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
-            ${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
+            v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
             lts-1
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
+      wasmtime-crate: "${{ matrix.wasmtime-crate }}"
       wasmtime-git-sha: "${{ matrix.wasmtime-git-sha }}"
       tag: "${{ matrix.tag }}"
       additional-tags: "${{ matrix.additional-tags }}"

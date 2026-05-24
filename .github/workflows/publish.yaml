@@ -3,6 +3,9 @@ name: Publish
 on:
   workflow_call:
     inputs:
+      wasmtime-crate:
+        description: wasmtime crate version to build
+        type: string
       wasmtime-git-sha:
         description: wasmtime git sha to build
         required: true
@@ -105,6 +108,7 @@ jobs:
           --platform "linux/${{ matrix.arch }}" \
           --build-arg "SOURCE_DATE_EPOCH=$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
           --build-arg "rust_version=${{ inputs.rust-version }}" \
+          --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
           --build-arg "wasmtime_revision=${{ inputs.wasmtime-git-sha }}" \
           --build-arg "wasmtime_version=${{ inputs.tag }}" \
           --build-arg "wasmtime_commit_date=${{ needs.preflight.outputs.wasmtime-commit-date }}" \

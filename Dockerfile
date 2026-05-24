@@ -1,17 +1,28 @@
 ARG rust_version
-ARG base=cgr.dev/chainguard/static
+ARG base
 ARG base_digest
-FROM rust${rust_version:+:${rust_version}} AS build
+FROM rust:${rust_version:} AS build
 RUN apt-get update && apt-get install gcc-$(arch | tr _ -)-linux-gnu musl-tools -y
 RUN rustup target add $(arch)-unknown-linux-musl
+ARG wasmtime_crate
 ARG wasmtime_revision
 RUN \
-  cargo install \
-    --target "$(arch)-unknown-linux-musl" \
-    --git https://github.com/bytecodealliance/wasmtime.git \
-    --rev "${wasmtime_revision}" \
-    wasmtime-cli
-FROM "${base}${base_digest:+@${base_digest}}"
+  if [ "${wasmtime_crate}" = "" ] ; then \
+    cargo install \
+      --target "$(arch)-unknown-linux-musl" \
+      --git https://github.com/bytecodealliance/wasmtime.git \
+      --rev "${wasmtime_revision}" \
+      --locked \
+      wasmtime-cli \
+    ; \
+  else \
+    cargo install \
+      --target "$(arch)-unknown-linux-musl" \
+      --locked \
+      wasmtime-cli@${wasmtime_crate} \
+    ; \
+  fi
+FROM "${base}@${base_digest}"
 COPY --from=build \
   /usr/local/cargo/bin/wasmtime \
   /usr/bin/wasmtime

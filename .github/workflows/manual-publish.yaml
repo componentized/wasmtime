@@ -3,6 +3,9 @@ name: Manual publish
 on:
   workflow_dispatch:
     inputs:
+      wasmtime-crate:
+        description: wasmtime crate version to build
+        type: string
       wasmtime-git-ref:
         description: wasmtime git ref to build ('refs/tag/{tag}', 'refs/heads/{branch}')
         required: true
@@ -58,6 +61,7 @@ jobs:
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
+      wasmtime-crate: "${{ inputs.wasmtime-crate }}"
       wasmtime-git-sha: "${{ needs.preflight.outputs.wasmtime-git-sha }}"
       repository: "${{ inputs.repository }}"
       tag: "${{ inputs.tag }}"
