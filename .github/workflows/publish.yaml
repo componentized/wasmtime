@@ -70,7 +70,7 @@ jobs:
         base_digest="$(crane digest "${base}")"
         echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
 
-        wasmtime_commit_date=$(gh api repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-sha }} --template '{{.commit.committer.date}}')
+        wasmtime_commit_date="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-sha }}" --template '{{.commit.committer.date}}')"
         echo "wasmtime-commit-date=${wasmtime_commit_date}" | tee -a "${GITHUB_OUTPUT}"
       env:
         GH_TOKEN: ${{ github.token }}
