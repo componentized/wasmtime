@@ -1,24 +1,27 @@
 ARG rust_version
-FROM rust:${rust_version} AS build
+FROM rust${rust_version:+:${rust_version}} AS build
 RUN apt-get update && apt-get install gcc-$(arch | tr _ -)-linux-gnu musl-tools -y
 RUN rustup target add $(arch)-unknown-linux-musl
 ARG wasmtime_revision
-ARG wasmtime_version
-ARG wasmtime_commit_date
 RUN \
   cargo install \
     --target "$(arch)-unknown-linux-musl" \
     --git https://github.com/bytecodealliance/wasmtime.git \
     --rev "${wasmtime_revision}" \
     wasmtime-cli
-ARG base
+ARG base=cgr.dev/chainguard/static
 ARG base_digest
-FROM ${base}@${base_digest}
+FROM "${base}${base_digest:+@${base_digest}}"
 COPY --from=build \
   /usr/local/cargo/bin/wasmtime \
   /usr/bin/wasmtime
 ENTRYPOINT ["wasmtime"]
 CMD ["--version"]
+ARG base
+ARG base_digest
+ARG wasmtime_revision
+ARG wasmtime_version
+ARG wasmtime_commit_date
 LABEL org.opencontainers.image.created="${wasmtime_commit_date}"
 LABEL org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>"
 LABEL org.opencontainers.image.source="https://github.com/bytecodealliance/wasmtime"

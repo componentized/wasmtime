@@ -110,8 +110,8 @@ jobs:
           --build-arg "wasmtime_commit_date=${{ needs.preflight.outputs.wasmtime-commit-date }}" \
           --build-arg "base=${{ needs.preflight.outputs.base }}" \
           --build-arg "base_digest=${{ needs.preflight.outputs.base-digest }}" \
-          --provenance false \
-          --sbom false \
+          --provenance=false \
+          --sbom=false \
           .
 
         mkdir "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
