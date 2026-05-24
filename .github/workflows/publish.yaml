@@ -133,11 +133,11 @@ jobs:
       run: |
         set -euo pipefail
 
-        crane push --index \
+        crane push \
           "wasmtime-${{ inputs.wasmtime-version }}-amd64" \
           registry.local/wasmtime:amd64
 
-        crane push --index \
+        crane push \
           "wasmtime-${{ inputs.wasmtime-version }}-arm64" \
           registry.local/wasmtime:arm64
 
@@ -178,9 +178,21 @@ jobs:
         path: "wasmtime-${{ inputs.wasmtime-version }}"
     - name: Relocate image
       run: |
-        crane push --index "wasmtime-${{ inputs.wasmtime-version }}" registry.local/wasmtime
+        crane push \
+          "wasmtime-${{ inputs.wasmtime-version }}" \
+          registry.local/wasmtime
     # TODO test image
-    - run: docker run --rm registry.local/wasmtime wasmtime --version
+    - name: Run container
+      run: docker run --rm registry.local/wasmtime wasmtime --version
+    - name: Check expected images in index
+      run: |
+        set -euo pipefail
+
+        listing=$(crane index list registry.local/wasmtime)
+        echo "${listing}"
+
+        echo "${listing}" | grep linux/amd64
+        echo "${listing}" | grep linux/arm64
 
   publish:
     name: Publish
@@ -206,7 +218,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Push
       run: |
-        crane push --index \
+        crane push \
           "wasmtime-${{ inputs.wasmtime-version }}" \
           "${{ env.image }}"
     - name: Additional tags
