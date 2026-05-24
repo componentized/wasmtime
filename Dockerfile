@@ -1,4 +1,6 @@
 ARG rust_version
+ARG base=cgr.dev/chainguard/static
+ARG base_digest
 FROM rust${rust_version:+:${rust_version}} AS build
 RUN apt-get update && apt-get install gcc-$(arch | tr _ -)-linux-gnu musl-tools -y
 RUN rustup target add $(arch)-unknown-linux-musl
@@ -9,8 +11,6 @@ RUN \
     --git https://github.com/bytecodealliance/wasmtime.git \
     --rev "${wasmtime_revision}" \
     wasmtime-cli
-ARG base=cgr.dev/chainguard/static
-ARG base_digest
 FROM "${base}${base_digest:+@${base_digest}}"
 COPY --from=build \
   /usr/local/cargo/bin/wasmtime \
