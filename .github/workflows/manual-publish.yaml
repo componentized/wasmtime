@@ -52,7 +52,9 @@ jobs:
         echo 'EOF' >> $GITHUB_OUTPUT
 
   publish:
-    name: Publish wasmtime image
+    name: Publish
+    permissions:
+      packages: write
     needs: preflight
     uses: ./.github/workflows/publish.yaml
     with:
