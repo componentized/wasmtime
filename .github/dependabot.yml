@@ -9,13 +9,13 @@ updates:
   schedule:
     interval: daily
 - package-ecosystem: cargo
-  directory: "/versions/latest"
+  directory: "/versions/stable"
   allow:
   - dependency-name: "wasmtime-cli"
   schedule:
     interval: daily
 - package-ecosystem: cargo
-  directory: "/versions/latest-1"
+  directory: "/versions/stable-1"
   allow:
   - dependency-name: "wasmtime-cli"
     update-types: ["version-update:semver-patch", "version-update:semver-minor"]
