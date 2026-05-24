@@ -55,9 +55,12 @@ jobs:
         echo "wasmtime-lts-version=$(cd versions/lts ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
         # lts minus 1
         echo "wasmtime-lts-1-version=$(cd versions/lts-1 ; cargo metadata --format-version 1 | jq -r '.packages[] | select(.name=="wasmtime-cli") | .version')" | tee -a "${GITHUB_OUTPUT}"
-        
+
   publish:
     name: Publish
+    permissions:
+      # called workflow requires write even though it's never used from here
+      packages: write
     needs: preflight
     strategy:
       fail-fast: false

@@ -62,7 +62,6 @@ jobs:
   publish:
     name: Publish
     permissions:
-      contents: write
       packages: write
     needs: preflight
     strategy:
