@@ -9,13 +9,30 @@ Images with wasmtime embedded.
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
 
-This project aims to track new Wasmtime releases packaging them as publicly available OCI images hosted on the GitHub Container Registry (ghcr.io). New images are built using the latest stable version of rust for linux/amd64 and linux/arm64.
+This project aims to track new [Wasmtime](https://wasmtime.dev) releases packaging them as publicly available OCI images hosted on the GitHub Container Registry (`ghcr.io`). New images are built using the latest stable version of rust for `linux/amd64` and `linux/arm64`.
 
 ```sh
-docker pull ghcr.io/componentized/wasmtime:v36.0.10
+docker pull ghcr.io/componentized/wasmtime
 ```
 
-The packages page on GitHub contains a [full list of available images](https://github.com/componentized/wasmtime/pkgs/container/wasmtime).
+The packages page on GitHub contains a [full list of available images](https://github.com/orgs/componentized/packages?repo_name=wasmtime). 
+
+Images are published to state and dev repositories. Tags within each repository follow these pattens:
+
+- [`ghcr.io/componentized/wasmtime`](https://github.com/componentized/wasmtime/pkgs/container/wasmtime)
+  - `:v{major}.{minor}.{patch}`
+  - `:v{major}.{minor}` - most recent release for this major and minor versions
+  - `:v{major}` - most recent release for this major version
+  - `:latest` - most recent release
+  - `:latest-1` - most recent release for the previous major line
+  - `:lts` - most recent lts release
+  - `:lts-1` - most recent release for the previous lts line
+- [`ghcr.io/componentized/wasmtime/dev`](https://github.com/componentized/wasmtime/pkgs/container/wasmtime%2Fdev)
+  - `dev-{yyyy}-{mm}-{dd}` - most recent dev build from this commit date
+  - `dev-{gitsha}` - dev build for this git sha
+  - `latest` - most recent dev build
+
+A good faith effort is made to capture the latest stable and dev releases. It's possible an individual release may not be published. Please [open an issue](https://github.com/componentized/wasmtime/issues) if an important build is not available within a reasonable period of time.
 
 ## Community
 
