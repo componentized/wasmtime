@@ -99,11 +99,11 @@ jobs:
           --driver=docker-container \
           default
 
-        SOURCE_DATE_EPOCH="$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
         docker buildx build \
           --builder container \
           --output type=oci,dest="./wasmtime-${{ inputs.tag }}-${{ matrix.arch }}.tar" \
           --platform "linux/${{ matrix.arch }}" \
+          --build-arg "SOURCE_DATE_EPOCH=$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
           --build-arg "rust_version=${{ inputs.rust-version }}" \
           --build-arg "wasmtime_revision=${{ inputs.wasmtime-git-sha }}" \
           --build-arg "wasmtime_version=${{ inputs.tag }}" \

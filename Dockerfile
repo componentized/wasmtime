@@ -14,7 +14,7 @@ RUN \
 ARG base
 ARG base_digest
 FROM ${base}@${base_digest}
-COPY --from=build --timestamp="${wasmtime_commit_date}" \
+COPY --from=build \
   /usr/local/cargo/bin/wasmtime \
   /usr/bin/wasmtime
 ENTRYPOINT ["wasmtime"]
