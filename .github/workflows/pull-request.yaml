@@ -12,10 +12,10 @@ jobs:
       pull-requests: read
     outputs:
       rust-version: ${{ steps.versions.outputs.rust-version }}
-      wasmtime-latest-changed: ${{ steps.filter.outputs.wasmtime-latest }}
-      wasmtime-latest-version: ${{ steps.versions.outputs.wasmtime-latest-version }}
-      wasmtime-latest-1-changed: ${{ steps.filter.outputs.wasmtime-latest-1 }}
-      wasmtime-latest-1-version: ${{ steps.versions.outputs.wasmtime-latest-1-version }}
+      wasmtime-stable-changed: ${{ steps.filter.outputs.wasmtime-stable }}
+      wasmtime-stable-version: ${{ steps.versions.outputs.wasmtime-stable-version }}
+      wasmtime-stable-1-changed: ${{ steps.filter.outputs.wasmtime-stable-1 }}
+      wasmtime-stable-1-version: ${{ steps.versions.outputs.wasmtime-stable-1-version }}
       wasmtime-lts-changed: ${{ steps.filter.outputs.wasmtime-lts }}
       wasmtime-lts-version: ${{ steps.versions.outputs.wasmtime-lts-version }}
       wasmtime-lts-1-changed: ${{ steps.filter.outputs.wasmtime-lts-1 }}
@@ -31,10 +31,10 @@ jobs:
           - '.github/**'
           - 'Dockerfile'
           - 'rust-toolchain.toml'
-          wasmtime-latest:
-          - 'versions/latest/**'
-          wasmtime-latest-1:
-          - 'versions/latest-1/**'
+          wasmtime-stable:
+          - 'versions/stable/**'
+          wasmtime-stable-1:
+          - 'versions/stable-1/**'
           wasmtime-lts:
           - 'versions/lts/**'
           wasmtime-lts-1:
@@ -46,13 +46,13 @@ jobs:
 
         echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
-        # latest
-        echo "wasmtime-latest-version=$(cd versions/latest ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
-        # latest minus 1
-        echo "wasmtime-latest-1-version=$(cd versions/latest-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
+        # stable
+        echo "wasmtime-stable-version=$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
+        # stable, minus 1
+        echo "wasmtime-stable-1-version=$(cd versions/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
         # lts
         echo "wasmtime-lts-version=$(cd versions/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
-        # lts minus 1
+        # lts, minus 1
         echo "wasmtime-lts-1-version=$(cd versions/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)" | tee -a "${GITHUB_OUTPUT}"
 
   publish:
@@ -65,10 +65,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-version }}
-          force: ${{ needs.preflight.outputs.wasmtime-latest-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-1-version }}
-          force: ${{ needs.preflight.outputs.wasmtime-latest-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+          force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-version }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}

@@ -52,6 +52,7 @@ jobs:
       additional-tags: |
         dev-${{ needs.preflight.outputs.git-ref-short }}
         dev-${{ needs.preflight.outputs.git-date }}
+        dev
         latest
     secrets: inherit
 

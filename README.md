@@ -23,14 +23,14 @@ Images are published to state and dev repositories. Tags within each repository 
   - `:v{major}.{minor}.{patch}`
   - `:v{major}.{minor}` - most recent release for this major and minor versions
   - `:v{major}` - most recent release for this major version
-  - `:latest` - most recent release
-  - `:latest-1` - most recent release for the previous major line
+  - `:stable` - most recent release
+  - `:stable-1` - most recent release for the previous major line
   - `:lts` - most recent lts release
   - `:lts-1` - most recent release for the previous lts line
 - [`ghcr.io/componentized/wasmtime/dev`](https://github.com/componentized/wasmtime/pkgs/container/wasmtime%2Fdev)
-  - `dev-{yyyy}-{mm}-{dd}` - most recent dev build from this commit date
-  - `dev-{gitsha}` - dev build for this git sha
-  - `latest` - most recent dev build
+  - `:dev-{yyyy}-{mm}-{dd}` - most recent dev build from this commit date
+  - `:dev-{gitsha}` - dev build for this git sha
+  - `:dev` - most recent dev build
 
 A good faith effort is made to capture the latest stable and dev releases. It's possible an individual release may not be published. Please [open an issue](https://github.com/componentized/wasmtime/issues) if an important build is not available within a reasonable period of time.
 

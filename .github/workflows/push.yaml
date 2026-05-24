@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rust-version: ${{ steps.versions.outputs.rust-version }}
-      wasmtime-latest-version: ${{ steps.versions.outputs.wasmtime-latest-version }}
-      wasmtime-latest-version-major: ${{ steps.versions.outputs.wasmtime-latest-version-major }}
-      wasmtime-latest-version-minor: ${{ steps.versions.outputs.wasmtime-latest-version-minor }}
-      wasmtime-latest-1-version: ${{ steps.versions.outputs.wasmtime-latest-1-version }}
-      wasmtime-latest-1-version-major: ${{ steps.versions.outputs.wasmtime-latest-1-version-major }}
-      wasmtime-latest-1-version-minor: ${{ steps.versions.outputs.wasmtime-latest-1-version-minor }}
+      wasmtime-stable-version: ${{ steps.versions.outputs.wasmtime-stable-version }}
+      wasmtime-stable-version-major: ${{ steps.versions.outputs.wasmtime-stable-version-major }}
+      wasmtime-stable-version-minor: ${{ steps.versions.outputs.wasmtime-stable-version-minor }}
+      wasmtime-stable-1-version: ${{ steps.versions.outputs.wasmtime-stable-1-version }}
+      wasmtime-stable-1-version-major: ${{ steps.versions.outputs.wasmtime-stable-1-version-major }}
+      wasmtime-stable-1-version-minor: ${{ steps.versions.outputs.wasmtime-stable-1-version-minor }}
       wasmtime-lts-version: ${{ steps.versions.outputs.wasmtime-lts-version }}
       wasmtime-lts-version-major: ${{ steps.versions.outputs.wasmtime-lts-version-major }}
       wasmtime-lts-version-minor: ${{ steps.versions.outputs.wasmtime-lts-version-minor }}
@@ -34,17 +34,17 @@ jobs:
 
         echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
-        # latest
-        wasmtime_latest_version="$(cd versions/latest ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
-        echo "wasmtime-latest-version=${wasmtime_latest_version}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-latest-version-major=$(echo "${wasmtime_latest_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-latest-version-minor=$(echo "${wasmtime_latest_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
+        # stable
+        wasmtime_stable_version="$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        echo "wasmtime-stable-version=${wasmtime_stable_version}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-stable-version-major=$(echo "${wasmtime_stable_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-stable-version-minor=$(echo "${wasmtime_stable_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
 
-        # latest minus 1
-        wasmtime_latest_1_version="$(cd versions/latest-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
-        echo "wasmtime-latest-1-version=${wasmtime_latest_1_version}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-latest-1-version-major=$(echo "${wasmtime_latest_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-latest-1-version-minor=$(echo "${wasmtime_latest_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
+        # stable, minus 1
+        wasmtime_stable_1_version="$(cd versions/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        echo "wasmtime-stable-1-version=${wasmtime_stable_1_version}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-stable-1-version-major=$(echo "${wasmtime_stable_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-stable-1-version-minor=$(echo "${wasmtime_stable_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
 
         # lts
         wasmtime_lts_version="$(cd versions/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
@@ -52,7 +52,7 @@ jobs:
         echo "wasmtime-lts-version-major=$(echo "${wasmtime_lts_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-version-minor=$(echo "${wasmtime_lts_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
 
-        # lts minus 1
+        # lts, minus 1
         wasmtime_lts_1_version="$(cd versions/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-version-major=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
@@ -67,17 +67,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-version }}
-          tag: v${{ needs.preflight.outputs.wasmtime-latest-version }}
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+          tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
           additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-latest-version-minor }}
-            v${{ needs.preflight.outputs.wasmtime-latest-version-major }}
+            v${{ needs.preflight.outputs.wasmtime-stable-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-stable-version-major }}
+            stable
             latest
-        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-latest-1-version }}
-          tag: v${{ needs.preflight.outputs.wasmtime-latest-1-version }}
+        - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
           additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-latest-1-version-minor }}
-            v${{ needs.preflight.outputs.wasmtime-latest-1-version-major }}
+            v${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}
+            v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}
+            stable-1
             latest-1
         - wasmtime-version: ${{ needs.preflight.outputs.wasmtime-lts-version }}
           tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
