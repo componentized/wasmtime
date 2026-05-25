@@ -68,7 +68,7 @@ jobs:
         digest="$(crane digest "${{ env.image }}" || echo -n '')"
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
-        base="cgr.dev/chainguard/static"
+        base="cgr.dev/chainguard/static:latest"
         echo "base=${base}" | tee -a "${GITHUB_OUTPUT}"
         base_digest="$(crane digest "${base}")"
         echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
@@ -107,15 +107,23 @@ jobs:
           --output type=oci,dest="./wasmtime-${{ inputs.tag }}-${{ matrix.arch }}.tar" \
           --platform "linux/${{ matrix.arch }}" \
           --build-arg "SOURCE_DATE_EPOCH=$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
-          --build-arg "rust_version=${{ inputs.rust-version }}" \
           --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
-          --build-arg "wasmtime_revision=${{ inputs.wasmtime-git-sha }}" \
-          --build-arg "wasmtime_version=${{ inputs.tag }}" \
-          --build-arg "wasmtime_commit_date=${{ needs.preflight.outputs.wasmtime-commit-date }}" \
-          --build-arg "base=${{ needs.preflight.outputs.base }}" \
-          --build-arg "base_digest=${{ needs.preflight.outputs.base-digest }}" \
-          --provenance=false \
-          --sbom=false \
+          --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
+          --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
+          --build-arg "from_build=rust:${{ inputs.rust-version }}" \
+          --label org.opencontainers.image.created="${{ needs.preflight.outputs.wasmtime-commit-date }}" \
+          --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \
+          --label org.opencontainers.image.source="https://github.com/bytecodealliance/wasmtime" \
+          --label org.opencontainers.image.version="${{ inputs.tag }}" \
+          --label org.opencontainers.image.revision="${{ inputs.wasmtime-git-sha }}" \
+          --label org.opencontainers.image.vendor="Componentized <https://github.com/componentized>" \
+          --label org.opencontainers.image.url="https://github.com/componentized/wasmtime" \
+          --label org.opencontainers.image.title="wasmtime" \
+          --label org.opencontainers.image.description="A fast and secure runtime for WebAssembly. Packaged by Componentized." \
+          --label org.opencontainers.image.documentation="https://docs.wasmtime.dev" \
+          --label org.opencontainers.image.licenses="Apache-2.0" \
+          --label org.opencontainers.image.base.digest="${{ needs.preflight.outputs.base-digest }}" \
+          --label org.opencontainers.image.base.name="${{ needs.preflight.outputs.base }}" \
           .
 
         mkdir "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
