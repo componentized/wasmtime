@@ -43,7 +43,7 @@ jobs:
 
         echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
-        wasmtime_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-ref }}" --template '{{.sha}}'))"
+        wasmtime_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-ref }}" --template '{{.sha}}')"
         echo "wasmtime-git-sha=${wasmtime_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
         # convert space delimited to new-line delimited
