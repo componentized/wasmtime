@@ -111,19 +111,19 @@ jobs:
           --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
           --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
           --build-arg "from_build=rust:${{ inputs.rust-version }}" \
-          --label org.opencontainers.image.created="${{ needs.preflight.outputs.wasmtime-commit-date }}" \
           --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \
-          --label org.opencontainers.image.source="https://github.com/bytecodealliance/wasmtime" \
-          --label org.opencontainers.image.version="${{ inputs.tag }}" \
-          --label org.opencontainers.image.revision="${{ inputs.wasmtime-git-sha }}" \
-          --label org.opencontainers.image.vendor="Componentized <https://github.com/componentized>" \
-          --label org.opencontainers.image.url="https://github.com/componentized/wasmtime" \
-          --label org.opencontainers.image.title="wasmtime" \
+          --label org.opencontainers.image.base.digest="${{ needs.preflight.outputs.base-digest }}" \
+          --label org.opencontainers.image.base.name="${{ needs.preflight.outputs.base }}" \
+          --label org.opencontainers.image.created="${{ needs.preflight.outputs.wasmtime-commit-date }}" \
           --label org.opencontainers.image.description="A fast and secure runtime for WebAssembly. Packaged by Componentized." \
           --label org.opencontainers.image.documentation="https://docs.wasmtime.dev" \
           --label org.opencontainers.image.licenses="Apache-2.0" \
-          --label org.opencontainers.image.base.digest="${{ needs.preflight.outputs.base-digest }}" \
-          --label org.opencontainers.image.base.name="${{ needs.preflight.outputs.base }}" \
+          --label org.opencontainers.image.revision="${{ inputs.wasmtime-git-sha }}" \
+          --label org.opencontainers.image.source="https://github.com/bytecodealliance/wasmtime" \
+          --label org.opencontainers.image.title="wasmtime" \
+          --label org.opencontainers.image.vendor="Componentized <https://github.com/componentized>" \
+          --label org.opencontainers.image.version="${{ inputs.tag }}" \
+          --label org.opencontainers.image.url="${{ github.server_url }}/${{ github.repository }}" \
           .
 
         mkdir "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
