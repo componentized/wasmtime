@@ -5,8 +5,9 @@ RUN \
   apt-get update ; \
   apt-get install gcc-$(arch | tr _ -)-linux-gnu musl-tools -y ; \
   rustup target add $(arch)-unknown-linux-musl ; \
+  cargo install --locked cargo-auditable ; \
   if [ "${wasmtime_crate}" = "" ] ; then \
-    cargo install \
+    cargo auditable install \
       --target "$(arch)-unknown-linux-musl" \
       --git https://github.com/bytecodealliance/wasmtime.git \
       --rev "${wasmtime_git_rev}" \
@@ -14,7 +15,7 @@ RUN \
       wasmtime-cli \
     ; \
   else \
-    cargo install \
+    cargo auditable install \
       --target "$(arch)-unknown-linux-musl" \
       --locked \
       wasmtime-cli@${wasmtime_crate} \
