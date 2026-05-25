@@ -24,6 +24,9 @@ on:
         description: force overwriting an existing image
         type: boolean
         default: false
+      rust-version:
+        description: rust version to build
+        type: string
 
 jobs:
 
@@ -41,7 +44,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-version=${{ inputs.rust-version || '$(yq -r ''.toolchain.channel'' rust-toolchain.toml)' }}" | tee -a "${GITHUB_OUTPUT}"
 
         wasmtime_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-ref }}" --template '{{.sha}}')"
         echo "wasmtime-git-sha=${wasmtime_git_sha}" | tee -a "${GITHUB_OUTPUT}"
