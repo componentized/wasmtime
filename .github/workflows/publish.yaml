@@ -68,7 +68,7 @@ jobs:
         digest="$(crane digest "${{ env.image }}" || echo -n '')"
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
-        base="cgr.dev/chainguard/static:latest"
+        base="cgr.dev/chainguard/glibc-dynamic:latest"
         echo "base=${base}" | tee -a "${GITHUB_OUTPUT}"
         base_digest="$(crane digest "${base}")"
         echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
