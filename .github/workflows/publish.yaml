@@ -3,14 +3,13 @@ name: Publish
 on:
   workflow_call:
     inputs:
-      wasmtime-version:
-        description: wasmtime version to build
+      wasmtime-crate:
+        description: wasmtime crate version to build
+        type: string
+      wasmtime-git-sha:
+        description: wasmtime git sha to build
         required: true
         type: string
-      wasmtime-source:
-        description: wasmtime source. 'crate' or 'git'
-        type: string
-        default: crate
       rust-version:
         description: rust version to build
         required: true
@@ -36,7 +35,7 @@ on:
         default: false
 
 concurrency:
-  group: ${{ case(inputs.publish, inputs.tag, format('run-{0}-v{1}', github.run_id, inputs.tag)) }}
+  group: ${{ case(inputs.publish, inputs.tag, format('run-{0}-{1}', github.run_id, inputs.tag)) }}
   queue: max
 
 env:
@@ -54,6 +53,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       existing-digest: ${{ steps.existing.outputs.digest }}
+      base: ${{ steps.existing.outputs.base }}
+      base-digest: ${{ steps.existing.outputs.base-digest }}
+      wasmtime-commit-date: ${{ steps.existing.outputs.wasmtime-commit-date }}
     steps:
     - uses: actions/checkout@v6
     - name: Install crane
@@ -65,6 +67,16 @@ jobs:
 
         digest="$(crane digest "${{ env.image }}" || echo -n '')"
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
+
+        base="cgr.dev/chainguard/static:latest"
+        echo "base=${base}" | tee -a "${GITHUB_OUTPUT}"
+        base_digest="$(crane digest "${base}")"
+        echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
+
+        wasmtime_commit_date="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-sha }}" --template '{{.commit.committer.date}}')"
+        echo "wasmtime-commit-date=${wasmtime_commit_date}" | tee -a "${GITHUB_OUTPUT}"
+      env:
+        GH_TOKEN: ${{ github.token }}
 
   build:
     name: Build
@@ -92,21 +104,34 @@ jobs:
 
         docker buildx build \
           --builder container \
-          --output type=oci,dest="./wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}.tar" \
+          --output type=oci,dest="./wasmtime-${{ inputs.tag }}-${{ matrix.arch }}.tar" \
           --platform "linux/${{ matrix.arch }}" \
-          --build-arg "rust=${{ inputs.rust-version }}" \
-          --build-arg "wasmtime_source=${{ inputs.wasmtime-source }}" \
-          --build-arg "wasmtime=${{ inputs.wasmtime-version }}" \
-          --provenance false \
-          --sbom=false \
+          --build-arg "SOURCE_DATE_EPOCH=$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
+          --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
+          --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
+          --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
+          --build-arg "from_build=rust:${{ inputs.rust-version }}" \
+          --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \
+          --label org.opencontainers.image.base.digest="${{ needs.preflight.outputs.base-digest }}" \
+          --label org.opencontainers.image.base.name="${{ needs.preflight.outputs.base }}" \
+          --label org.opencontainers.image.created="${{ needs.preflight.outputs.wasmtime-commit-date }}" \
+          --label org.opencontainers.image.description="A fast and secure runtime for WebAssembly. Packaged by Componentized." \
+          --label org.opencontainers.image.documentation="https://docs.wasmtime.dev" \
+          --label org.opencontainers.image.licenses="Apache-2.0" \
+          --label org.opencontainers.image.revision="${{ inputs.wasmtime-git-sha }}" \
+          --label org.opencontainers.image.source="https://github.com/bytecodealliance/wasmtime" \
+          --label org.opencontainers.image.title="wasmtime" \
+          --label org.opencontainers.image.vendor="Componentized <https://github.com/componentized>" \
+          --label org.opencontainers.image.version="${{ inputs.tag }}" \
+          --label org.opencontainers.image.url="${{ github.server_url }}/${{ github.repository }}" \
           .
 
-        mkdir "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
-        tar -xvf "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}.tar" -C "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
+        mkdir "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
+        tar -xvf "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}.tar" -C "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
     - uses: actions/upload-artifact@v7
       with:
-        name: "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
-        path: "wasmtime-${{ inputs.wasmtime-version }}-${{ matrix.arch }}"
+        name: "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
+        path: "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
         retention-days: 7
 
   assemble:
@@ -122,23 +147,23 @@ jobs:
     - name: Download staged image (amd64)
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-${{ inputs.wasmtime-version }}-amd64"
-        path: "wasmtime-${{ inputs.wasmtime-version }}-amd64"
+        name: "wasmtime-${{ inputs.tag }}-amd64"
+        path: "wasmtime-${{ inputs.tag }}-amd64"
     - name: Download staged image (arm64)
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-${{ inputs.wasmtime-version }}-arm64"
-        path: "wasmtime-${{ inputs.wasmtime-version }}-arm64"
+        name: "wasmtime-${{ inputs.tag }}-arm64"
+        path: "wasmtime-${{ inputs.tag }}-arm64"
     - name: Assemble
       run: |
         set -euo pipefail
 
         crane push \
-          "wasmtime-${{ inputs.wasmtime-version }}-amd64" \
+          "wasmtime-${{ inputs.tag }}-amd64" \
           registry.local/wasmtime:amd64
 
         crane push \
-          "wasmtime-${{ inputs.wasmtime-version }}-arm64" \
+          "wasmtime-${{ inputs.tag }}-arm64" \
           registry.local/wasmtime:arm64
 
         crane index append \
@@ -148,11 +173,11 @@ jobs:
 
         crane pull --format oci \
           registry.local/wasmtime \
-          "wasmtime-${{ inputs.wasmtime-version }}"
+          "wasmtime-${{ inputs.tag }}"
     - uses: actions/upload-artifact@v7
       with:
-        name: "wasmtime-${{ inputs.wasmtime-version }}"
-        path: "wasmtime-${{ inputs.wasmtime-version }}"
+        name: "wasmtime-${{ inputs.tag }}"
+        path: "wasmtime-${{ inputs.tag }}"
         retention-days: 7
 
   test:
@@ -174,12 +199,12 @@ jobs:
     - name: Download staged image
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-${{ inputs.wasmtime-version }}"
-        path: "wasmtime-${{ inputs.wasmtime-version }}"
+        name: "wasmtime-${{ inputs.tag }}"
+        path: "wasmtime-${{ inputs.tag }}"
     - name: Relocate image
       run: |
         crane push \
-          "wasmtime-${{ inputs.wasmtime-version }}" \
+          "wasmtime-${{ inputs.tag }}" \
           registry.local/wasmtime
     # TODO test image
     - name: Run container
@@ -208,8 +233,8 @@ jobs:
     - name: Download staged image
       uses: actions/download-artifact@v8
       with:
-        name: "wasmtime-${{ inputs.wasmtime-version }}"
-        path: "wasmtime-${{ inputs.wasmtime-version }}"
+        name: "wasmtime-${{ inputs.tag }}"
+        path: "wasmtime-${{ inputs.tag }}"
     - name: Login to GitHub Container Registry
       uses: docker/login-action@v4
       with:
@@ -219,7 +244,7 @@ jobs:
     - name: Push
       run: |
         crane push \
-          "wasmtime-${{ inputs.wasmtime-version }}" \
+          "wasmtime-${{ inputs.tag }}" \
           "${{ env.image }}"
     - name: Additional tags
       if: inputs.additional-tags

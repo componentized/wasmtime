@@ -1,27 +1,28 @@
-ARG rust
-FROM rust${rust:+:${rust}} AS build
-RUN apt-get update && apt-get install gcc-$(arch | tr _ -)-linux-gnu musl-tools -y
-RUN rustup target add $(arch)-unknown-linux-musl
-ARG wasmtime
-ARG wasmtime_source=crate
+ARG from_build from_base
+FROM ${from_build} AS build
+ARG wasmtime_crate wasmtime_git_rev
 RUN \
-  if [ "${wasmtime_source}" = "crate" ] ; then \
-    cargo install \
-      --target "$(arch)-unknown-linux-musl" \
-      "wasmtime-cli${wasmtime:+@${wasmtime}}" \
-      ; \
-  elif [ "${wasmtime_source}" = "git" ] ; then \
+  apt-get update ; \
+  apt-get install gcc-$(arch | tr _ -)-linux-gnu musl-tools -y ; \
+  rustup target add $(arch)-unknown-linux-musl ; \
+  if [ "${wasmtime_crate}" = "" ] ; then \
     cargo install \
       --target "$(arch)-unknown-linux-musl" \
       --git https://github.com/bytecodealliance/wasmtime.git \
-      --rev "${wasmtime}" \
+      --rev "${wasmtime_git_rev}" \
+      --locked \
       wasmtime-cli \
-      ; \
+    ; \
   else \
-    echo "Unknown wasmtime_source='${wasmtime_source}': expected 'crate' or 'git'" ; \
-    exit 1 ; \
+    cargo install \
+      --target "$(arch)-unknown-linux-musl" \
+      --locked \
+      wasmtime-cli@${wasmtime_crate} \
+    ; \
   fi
-FROM cgr.dev/chainguard/static:latest
-COPY --from=build /usr/local/cargo/bin/wasmtime /usr/bin/wasmtime
+FROM "${from_base}"
+COPY --from=build \
+  /usr/local/cargo/bin/wasmtime \
+  /usr/bin/wasmtime
 ENTRYPOINT ["wasmtime"]
-CMD ["--version"]
+CMD ["--version"] 
