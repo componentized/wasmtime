@@ -124,6 +124,7 @@ jobs:
           --label org.opencontainers.image.vendor="Componentized <https://github.com/componentized>" \
           --label org.opencontainers.image.version="${{ inputs.tag }}" \
           --label org.opencontainers.image.url="${{ github.server_url }}/${{ github.repository }}" \
+          --sbom \
           .
 
         mkdir "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
