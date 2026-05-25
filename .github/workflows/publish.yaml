@@ -110,7 +110,7 @@ jobs:
           --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
           --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
           --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
-          --build-arg "from_build=rust:${{ inputs.rust-version }}" \
+          --build-arg "from_build=rust:${{ inputs.rust-version }}-alpine" \
           --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \
           --label org.opencontainers.image.base.digest="${{ needs.preflight.outputs.base-digest }}" \
           --label org.opencontainers.image.base.name="${{ needs.preflight.outputs.base }}" \
