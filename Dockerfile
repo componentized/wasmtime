@@ -5,6 +5,7 @@ RUN \
   cargo install --locked cargo-auditable ; \
   if [ "${wasmtime_crate}" = "" ] ; then \
     cargo auditable install \
+      --target "$(arch)-unknown-linux-musl" \
       --git https://github.com/bytecodealliance/wasmtime.git \
       --rev "${wasmtime_git_rev}" \
       --locked \
@@ -12,6 +13,7 @@ RUN \
     ; \
   else \
     cargo auditable install \
+      --target "$(arch)-unknown-linux-musl" \
       --locked \
       wasmtime-cli@${wasmtime_crate} \
     ; \

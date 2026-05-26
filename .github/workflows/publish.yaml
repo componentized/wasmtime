@@ -105,6 +105,7 @@ jobs:
         docker buildx build \
           --builder container \
           --output type=oci,dest="./wasmtime-${{ inputs.tag }}-${{ matrix.arch }}.tar" \
+          --platform "linux/${{ matrix.arch }}" \
           --build-arg "SOURCE_DATE_EPOCH=$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
           --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
           --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
