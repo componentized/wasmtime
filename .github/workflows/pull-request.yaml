@@ -24,6 +24,7 @@ jobs:
       wasmtime-lts-1-changed: ${{ steps.filter.outputs.wasmtime-lts-1 }}
       wasmtime-lts-1-git-sha: ${{ steps.versions.outputs.wasmtime-lts-1-git-sha }}
       wasmtime-lts-1-version: ${{ steps.versions.outputs.wasmtime-lts-1-version }}
+      wasmtime-dev-sha: ${{ steps.versions.outputs.wasmtime-dev-sha }}
       common-changed: ${{ steps.filter.outputs.common }}
     steps:
     - uses: actions/checkout@v6
@@ -35,6 +36,7 @@ jobs:
           - '.github/**'
           - 'Dockerfile'
           - 'rust-toolchain.toml'
+          - 'versions/cargo-auditable/**'
           wasmtime-stable:
           - 'versions/stable/**'
           wasmtime-stable-1:
@@ -73,6 +75,10 @@ jobs:
         wasmtime_lts_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_1_version}" --template '{{.sha}}')"
         echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-git-sha=${wasmtime_lts_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+
+        # dev
+        wasmtime_dev_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/dev" --template '{{.sha}}')"
+        echo "wasmtime-dev-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
       env:
         GH_TOKEN: ${{ github.token }}
 
@@ -86,22 +92,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
           force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
           force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          wasmtime-crate: ''
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          force: ${{ needs.preflight.outputs.common-changed == 'true' }}
     uses: ./.github/workflows/publish.yaml
     with:
       rust-version: "${{ needs.preflight.outputs.rust-version }}"
