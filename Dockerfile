@@ -4,7 +4,8 @@ ARG wasmtime_crate wasmtime_git_rev cargo_auditable_version
 RUN \
   cargo install --locked "cargo-auditable@${cargo_auditable_version}" ; \
   if [ "${wasmtime_crate}" = "" ] ; then \
-    cargo auditable install \
+    # restore 'cargo auditable' https://github.com/rust-secure-code/cargo-auditable/issues/257
+    cargo install \
       --git https://github.com/bytecodealliance/wasmtime.git \
       --rev "${wasmtime_git_rev}" \
       --locked \
