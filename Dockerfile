@@ -1,8 +1,8 @@
 ARG from_build from_base
 FROM ${from_build} AS build
-ARG wasmtime_crate wasmtime_git_rev
+ARG wasmtime_crate wasmtime_git_rev cargo_auditable_version
 RUN \
-  cargo install --locked cargo-auditable ; \
+  cargo install --locked "cargo-auditable@${cargo_auditable_version}" ; \
   if [ "${wasmtime_crate}" = "" ] ; then \
     cargo auditable install \
       --target "$(arch)-unknown-linux-musl" \

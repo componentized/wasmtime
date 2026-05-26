@@ -9,6 +9,12 @@ updates:
   schedule:
     interval: daily
 - package-ecosystem: cargo
+  directory: "/versions/cargo-auditable"
+  allow:
+  - dependency-name: "cargo-auditable"
+  schedule:
+    interval: daily
+- package-ecosystem: cargo
   directory: "/versions/stable"
   allow:
   - dependency-name: "wasmtime-cli"

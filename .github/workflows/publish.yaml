@@ -56,6 +56,7 @@ jobs:
       base: ${{ steps.existing.outputs.base }}
       base-digest: ${{ steps.existing.outputs.base-digest }}
       wasmtime-commit-date: ${{ steps.existing.outputs.wasmtime-commit-date }}
+      cargo-auditable-version: ${{ steps.existing.outputs.cargo-auditable-version }}
     steps:
     - uses: actions/checkout@v6
     - name: Install crane
@@ -75,6 +76,10 @@ jobs:
 
         wasmtime_commit_date="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-sha }}" --template '{{.commit.committer.date}}')"
         echo "wasmtime-commit-date=${wasmtime_commit_date}" | tee -a "${GITHUB_OUTPUT}"
+
+        cargo_auditable_version="$(cd versions/cargo-auditable ; yq -p toml -oj -r '.package[] | select(.name == "cargo-auditable") | .version' Cargo.lock)"
+        echo "cargo-auditable-version=${cargo_auditable_version}" | tee -a "${GITHUB_OUTPUT}"
+
       env:
         GH_TOKEN: ${{ github.token }}
 
@@ -109,6 +114,7 @@ jobs:
           --build-arg "SOURCE_DATE_EPOCH=$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
           --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
           --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
+          --build-arg "cargo_auditable_version=${{ needs.preflight.outputs.cargo-auditable-version }}" \
           --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
           --build-arg "from_build=rust:${{ inputs.rust-version }}-alpine" \
           --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \
