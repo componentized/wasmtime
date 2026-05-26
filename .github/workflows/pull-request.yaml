@@ -24,7 +24,7 @@ jobs:
       wasmtime-lts-1-changed: ${{ steps.filter.outputs.wasmtime-lts-1 }}
       wasmtime-lts-1-git-sha: ${{ steps.versions.outputs.wasmtime-lts-1-git-sha }}
       wasmtime-lts-1-version: ${{ steps.versions.outputs.wasmtime-lts-1-version }}
-      wasmtime-dev-sha: ${{ steps.versions.outputs.wasmtime-dev-sha }}
+      wasmtime-dev-git-sha: ${{ steps.versions.outputs.wasmtime-dev-git-sha }}
       common-changed: ${{ steps.filter.outputs.common }}
     steps:
     - uses: actions/checkout@v6
@@ -78,7 +78,7 @@ jobs:
 
         # dev
         wasmtime_dev_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/dev" --template '{{.sha}}')"
-        echo "wasmtime-dev-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
       env:
         GH_TOKEN: ${{ github.token }}
 
