@@ -69,7 +69,7 @@ jobs:
         digest="$(crane digest "${{ env.image }}" || echo -n '')"
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
-        base="cgr.dev/chainguard/static:latest"
+        base="cgr.dev/chainguard/glibc-dynamic:latest"
         echo "base=${base}" | tee -a "${GITHUB_OUTPUT}"
         base_digest="$(crane digest "${base}")"
         echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
@@ -115,7 +115,7 @@ jobs:
           --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
           --build-arg "cargo_auditable_version=${{ needs.preflight.outputs.cargo-auditable-version }}" \
           --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
-          --build-arg "from_build=rust:${{ inputs.rust-version }}-alpine" \
+          --build-arg "from_build=rust:${{ inputs.rust-version }}" \
           --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \
           --label org.opencontainers.image.base.digest="${{ needs.preflight.outputs.base-digest }}" \
           --label org.opencontainers.image.base.name="${{ needs.preflight.outputs.base }}" \
