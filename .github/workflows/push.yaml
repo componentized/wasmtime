@@ -76,6 +76,7 @@ jobs:
     name: Publish
     permissions:
       packages: write
+      id-token: write
     needs: preflight
     strategy:
       fail-fast: false

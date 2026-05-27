@@ -60,6 +60,7 @@ jobs:
     name: Publish
     permissions:
       packages: write
+      id-token: write
     needs: preflight
     uses: ./.github/workflows/publish.yaml
     with:
