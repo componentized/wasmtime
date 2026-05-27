@@ -87,6 +87,7 @@ jobs:
     permissions:
       # called workflow requires write even though it's never used from here
       packages: write
+      id-token: write
     needs: preflight
     strategy:
       fail-fast: false

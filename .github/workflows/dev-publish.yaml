@@ -41,8 +41,8 @@ jobs:
   build:
     name: Build
     permissions:
-      contents: write
       packages: write
+      id-token: write
     needs: preflight
     uses: ./.github/workflows/publish.yaml
     with:
