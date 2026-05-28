@@ -16,7 +16,7 @@ jobs:
     name: Preflight
     runs-on: ubuntu-latest
     outputs:
-      rust-version: ${{ steps.versions.outputs.rust-version }}
+      rust-toolchain: ${{ steps.versions.outputs.rust-toolchain }}
       git-sha: ${{ steps.versions.outputs.git-sha }}
       git-sha-short: ${{ steps.versions.outputs.git-sha-short }}
       git-date: ${{ steps.versions.outputs.git-date }}
@@ -27,7 +27,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-toolchain=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
         git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/${{ inputs.git-ref || 'refs/tags/dev' }} --template '{{.sha}} {{.commit.committer.date}}')
         git_sha="$(echo "${git_commit}" | cut -d' ' -f1)"
@@ -46,7 +46,7 @@ jobs:
     needs: preflight
     uses: ./.github/workflows/publish.yaml
     with:
-      rust-version: "${{ needs.preflight.outputs.rust-version }}"
+      rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-git-sha: ${{ needs.preflight.outputs.git-sha }}
       repository: dev
       tag: dev-${{ needs.preflight.outputs.git-sha }}

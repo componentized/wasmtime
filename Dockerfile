@@ -1,7 +1,9 @@
-ARG from_build from_base
-FROM ${from_build} AS build
-ARG wasmtime_crate wasmtime_git_rev cargo_auditable_version
+ARG from_base
+FROM rust:latest AS build
+ARG wasmtime_crate wasmtime_git_rev cargo_auditable_version rust_toolchain
 RUN \
+  set -euo pipefail ; \
+  rustup default "${rust_toolchain}" ; \
   cargo install --locked "cargo-auditable@${cargo_auditable_version}" ; \
   if [ "${wasmtime_crate}" = "" ] ; then \
     # work around https://github.com/rust-secure-code/cargo-auditable/issues/124#issuecomment-1693428978
