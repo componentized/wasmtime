@@ -39,10 +39,10 @@ concurrency:
   queue: max
 
 env:
-  image: "${{
+  repository: "${{
       case(inputs.repository == '',
-        format('ghcr.io/{0}:{1}', github.repository, inputs.tag),
-        format('ghcr.io/{0}/{1}:{2}', github.repository, inputs.repository, inputs.tag)
+        format('ghcr.io/{0}', github.repository),
+        format('ghcr.io/{0}/{1}', github.repository, inputs.repository)
       )
     }}"
 
@@ -66,7 +66,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        digest="$(crane digest "${{ env.image }}" || echo -n '')"
+        digest="$(crane digest "${{ env.repository }}:${{ inputs.tag }}" || echo -n '')"
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
         base="cgr.dev/chainguard/glibc-dynamic:latest"
@@ -144,6 +144,8 @@ jobs:
     name: Assemble
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.assemble.outputs.digest }}
     steps:
     - uses: actions/checkout@v6
     - name: Install crane
@@ -161,6 +163,7 @@ jobs:
         name: "wasmtime-${{ inputs.tag }}-arm64"
         path: "wasmtime-${{ inputs.tag }}-arm64"
     - name: Assemble
+      id: assemble
       run: |
         set -euo pipefail
 
@@ -177,9 +180,13 @@ jobs:
           -m registry.local/wasmtime:arm64 \
           -t registry.local/wasmtime
 
+        digest="$(crane digest registry.local/wasmtime)"
+        echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+
         crane pull --format oci \
-          registry.local/wasmtime \
+          "registry.local/wasmtime@${digest}" \
           "wasmtime-${{ inputs.tag }}"
+
     - uses: actions/upload-artifact@v7
       with:
         name: "wasmtime-${{ inputs.tag }}"
@@ -189,6 +196,8 @@ jobs:
   test:
     name: Test wasmtime image
     needs: assemble
+    outputs:
+      digest: ${{ needs.assemble.outputs.digest }}
     strategy:
       fail-fast: false
       matrix:
@@ -211,15 +220,15 @@ jobs:
       run: |
         crane push \
           "wasmtime-${{ inputs.tag }}" \
-          registry.local/wasmtime
+          "registry.local/wasmtime@${{ needs.assemble.outputs.digest }}"
     # TODO test image
     - name: Run container
-      run: docker run --rm registry.local/wasmtime
+      run: docker run --rm "registry.local/wasmtime@${{ needs.assemble.outputs.digest }}"
     - name: Check expected images in index
       run: |
         set -euo pipefail
 
-        listing=$(crane index list registry.local/wasmtime)
+        listing=$(crane index list "registry.local/wasmtime@${{ needs.assemble.outputs.digest }}")
         echo "${listing}"
 
         echo "${listing}" | grep -q linux/amd64
@@ -254,11 +263,11 @@ jobs:
       run: |
         crane push \
           "wasmtime-${{ inputs.tag }}" \
-          "${{ env.image }}"
+          "${{ env.repository }}@${{ needs.test.outputs.digest }}"
     - name: Sign
       run: |
         cosign sign --yes \
-          "${{ env.image }}"
+          "${{ env.repository }}@${{ needs.test.outputs.digest }}"
     - name: Additional tags
       if: inputs.additional-tags
       run: |
@@ -268,6 +277,11 @@ jobs:
 
         while IFS= read -r tag; do
           crane tag \
-            "${{ env.image }}" \
+            "${{ env.repository }}@${{ needs.test.outputs.digest }}" \
             "${tag}"
         done <<< "${additional_tags}"
+    - name: Primary tags
+      run: |
+        crane tag \
+            "${{ env.repository }}@${{ needs.test.outputs.digest }}" \
+            "${{ inputs.tag }}"
