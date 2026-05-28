@@ -24,8 +24,8 @@ on:
         description: force overwriting an existing image
         type: boolean
         default: false
-      rust-version:
-        description: rust version to build
+      rust-toolchain:
+        description: rust toolchain to build with
         type: string
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
     name: Preflight
     runs-on: ubuntu-latest
     outputs:
-      rust-version: ${{ steps.versions.outputs.rust-version }}
+      rust-toolchain: ${{ steps.versions.outputs.rust-toolchain }}
       wasmtime-git-sha: ${{ steps.versions.outputs.wasmtime-git-sha }}
       additional-tags: ${{ steps.versions.outputs.additional-tags }}
     steps:
@@ -44,7 +44,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        echo "rust-version=${{ inputs.rust-version || '$(yq -r ''.toolchain.channel'' rust-toolchain.toml)' }}" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-toolchain=${{ inputs.rust-toolchain || '$(yq -r ''.toolchain.channel'' rust-toolchain.toml)' }}" | tee -a "${GITHUB_OUTPUT}"
 
         wasmtime_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-ref }}" --template '{{.sha}}')"
         echo "wasmtime-git-sha=${wasmtime_git_sha}" | tee -a "${GITHUB_OUTPUT}"
@@ -64,7 +64,7 @@ jobs:
     needs: preflight
     uses: ./.github/workflows/publish.yaml
     with:
-      rust-version: "${{ needs.preflight.outputs.rust-version }}"
+      rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-crate: "${{ inputs.wasmtime-crate }}"
       wasmtime-git-sha: "${{ needs.preflight.outputs.wasmtime-git-sha }}"
       repository: "${{ inputs.repository }}"

@@ -12,7 +12,7 @@ jobs:
     name: Preflight
     runs-on: ubuntu-latest
     outputs:
-      rust-version: ${{ steps.versions.outputs.rust-version }}
+      rust-toolchain: ${{ steps.versions.outputs.rust-toolchain }}
       wasmtime-stable-git-sha: ${{ steps.versions.outputs.wasmtime-stable-git-sha }}
       wasmtime-stable-version: ${{ steps.versions.outputs.wasmtime-stable-version }}
       wasmtime-stable-version-major: ${{ steps.versions.outputs.wasmtime-stable-version-major }}
@@ -36,7 +36,7 @@ jobs:
       run: |
         set -euo pipefail
 
-        echo "rust-version=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
+        echo "rust-toolchain=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
         # stable
         wasmtime_stable_version="$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
@@ -114,7 +114,7 @@ jobs:
             lts-1
     uses: ./.github/workflows/publish.yaml
     with:
-      rust-version: "${{ needs.preflight.outputs.rust-version }}"
+      rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-crate: "${{ matrix.wasmtime-crate }}"
       wasmtime-git-sha: "${{ matrix.wasmtime-git-sha }}"
       tag: "${{ matrix.tag }}"
