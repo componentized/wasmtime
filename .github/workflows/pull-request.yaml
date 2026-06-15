@@ -82,8 +82,8 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
 
-  publish:
-    name: Publish
+  build:
+    name: Build ${{ matrix.tag }}
     permissions:
       # called workflow requires write even though it's never used from here
       packages: write
@@ -126,7 +126,7 @@ jobs:
   done:
     # used as a non-matrix job for protected branches
     name: Done
-    needs: publish
+    needs: build
     if: always() && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
