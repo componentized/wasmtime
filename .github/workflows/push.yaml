@@ -73,7 +73,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
 
   publish:
-    name: Publish
+    name: Publish ${{ matrix.tag }}
     permissions:
       packages: write
       id-token: write
