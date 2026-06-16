@@ -44,17 +44,28 @@ jobs:
       packages: write
       id-token: write
     needs: preflight
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - tag: dev-${{ needs.preflight.outputs.git-sha }}
+          additional-tags: |
+            dev-${{ needs.preflight.outputs.git-sha-short }}
+            dev-${{ needs.preflight.outputs.git-date }}
+            dev
+            latest
+        - tag: dev-${{ needs.preflight.outputs.git-sha }}-alpine
+          additional-tags: |
+            dev-${{ needs.preflight.outputs.git-sha-short }}-alpine
+            dev-${{ needs.preflight.outputs.git-date }}-alpine
+            dev-alpine
     uses: ./.github/workflows/publish.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-git-sha: ${{ needs.preflight.outputs.git-sha }}
       repository: dev
-      tag: dev-${{ needs.preflight.outputs.git-sha }}
-      additional-tags: |
-        dev-${{ needs.preflight.outputs.git-sha-short }}
-        dev-${{ needs.preflight.outputs.git-date }}
-        dev
-        latest
+      tag: ${{ matrix.tag }}
+      additional-tags: ${{ matrix.additional-tags }}
     secrets: inherit
 
   done:

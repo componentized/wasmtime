@@ -1,5 +1,5 @@
-ARG from_base
-FROM rust:latest AS build
+ARG from_build from_base
+FROM "${from_build}" AS build
 ARG wasmtime_crate wasmtime_git_rev cargo_auditable_version rust_toolchain
 RUN \
   set -euo pipefail ; \

@@ -97,7 +97,15 @@ jobs:
           wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
           force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
+          force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
         - tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
+          force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
           wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
           force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
@@ -105,11 +113,23 @@ jobs:
           wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
+          force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
         - tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+        - tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
+          wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
+          force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
         - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          wasmtime-crate: ''
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          force: ${{ needs.preflight.outputs.common-changed == 'true' }}
+        - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
           wasmtime-crate: ''
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
           force: ${{ needs.preflight.outputs.common-changed == 'true' }}
@@ -127,7 +147,7 @@ jobs:
     # used as a non-matrix job for protected branches
     name: Done
     needs: build
-    if: always() && (needs.publish.result == 'success' || needs.publish.result == 'skipped')
+    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
     - run: echo "That's all folks"
