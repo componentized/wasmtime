@@ -78,12 +78,12 @@ jobs:
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
         builder="${{ inputs.builder-image || case(endsWith(inputs.tag, '-alpine') , 'rust:alpine', 'rust:latest') }}"
-        echo "builder=$(echo "${builder} | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
+        echo "builder=$(echo "${builder}" | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
         builder_digest="$(crane digest "${builder}")"
         echo "builder-digest=${builder_digest}" | tee -a "${GITHUB_OUTPUT}"
 
         base="${{ inputs.base-image || case(endsWith(inputs.tag, '-alpine') , 'alpine', 'cgr.dev/chainguard/glibc-dynamic:latest') }}"
-        echo "base=$(echo "${base} | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
+        echo "base=$(echo "${base}" | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
         base_digest="$(crane digest "${base}")"
         echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
 
