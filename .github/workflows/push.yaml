@@ -125,6 +125,7 @@ jobs:
           additional-tags: |
             v${{ needs.preflight.outputs.wasmtime-lts-version-major }}-alpine
             v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}-alpine
+            lts-alpine
         - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
           tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
@@ -138,6 +139,7 @@ jobs:
           additional-tags: |
             v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}-alpine
             v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}-alpine
+            lts-1-alpine
     uses: ./.github/workflows/publish.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
