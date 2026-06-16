@@ -1,5 +1,5 @@
-ARG from_base
-FROM rust:latest AS build
+ARG from_build from_base
+FROM "${from_build}" AS build
 ARG wasmtime_crate wasmtime_git_rev cargo_auditable_version rust_toolchain
 RUN \
   set -euo pipefail ; \
@@ -13,6 +13,11 @@ RUN \
     #   --locked \
     #   wasmtime-cli \
     # ; \
+    if ! [ -x "$(command -v git)" ] ; then \
+      if [ -x "$(command -v apk)" ] ; then \
+        apk add --no-cache git ; \
+      fi ; \
+    fi ; \
     mkdir wasmtime ; cd wasmtime ; git init ; \
     git fetch --depth 1 https://github.com/bytecodealliance/wasmtime.git ${wasmtime_git_rev} && git reset --hard FETCH_HEAD && git submodule update --init --depth 1; \
     find . -name Cargo.toml | xargs sed -i 's/dep:pulley-interpreter/pulley-interpreter/' ; \

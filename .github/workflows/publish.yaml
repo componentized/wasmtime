@@ -33,6 +33,12 @@ on:
         description: force overwriting an existing image
         type: boolean
         default: false
+      builder-image:
+        description: image used to build wasmtime
+        type: string
+      base-image:
+        description: base image used for running wasmtime
+        type: string
 
 concurrency:
   group: ${{ case(inputs.publish, inputs.tag, format('run-{0}-{1}', github.run_id, inputs.tag)) }}
@@ -53,6 +59,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       existing-digest: ${{ steps.existing.outputs.digest }}
+      builder: ${{ steps.existing.outputs.builder }}
+      builder-digest: ${{ steps.existing.outputs.builder-digest }}
       base: ${{ steps.existing.outputs.base }}
       base-digest: ${{ steps.existing.outputs.base-digest }}
       wasmtime-commit-date: ${{ steps.existing.outputs.wasmtime-commit-date }}
@@ -69,8 +77,13 @@ jobs:
         digest="$(crane digest "${{ env.repository }}:${{ inputs.tag }}" || echo -n '')"
         echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
 
-        base="cgr.dev/chainguard/glibc-dynamic:latest"
-        echo "base=${base}" | tee -a "${GITHUB_OUTPUT}"
+        builder="${{ inputs.builder-image || case(endsWith(inputs.tag, '-alpine') , 'rust:alpine', 'rust:latest') }}"
+        echo "builder=$(echo "${builder}" | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
+        builder_digest="$(crane digest "${builder}")"
+        echo "builder-digest=${builder_digest}" | tee -a "${GITHUB_OUTPUT}"
+
+        base="${{ inputs.base-image || case(endsWith(inputs.tag, '-alpine') , 'alpine', 'cgr.dev/chainguard/glibc-dynamic:latest') }}"
+        echo "base=$(echo "${base}" | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
         base_digest="$(crane digest "${base}")"
         echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
 
@@ -116,6 +129,7 @@ jobs:
           --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
           --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
           --build-arg "cargo_auditable_version=${{ needs.preflight.outputs.cargo-auditable-version }}" \
+          --build-arg "from_build=${{ needs.preflight.outputs.builder }}@${{ needs.preflight.outputs.builder-digest }}" \
           --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
           --build-arg "rust_toolchain=${{ inputs.rust-toolchain }}" \
           --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \

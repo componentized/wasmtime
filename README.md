@@ -32,6 +32,8 @@ Images are published to state and dev repositories. Tags within each repository 
   - `:dev-{gitsha}` - dev build for this git sha
   - `:dev` - most recent dev build
 
+Alpine based images are available by appending `-alpine` to any of the above image tags. For example, `ghcr.io/componentized/wasmtime:stable-alpine`.
+
 A good faith effort is made to capture the latest stable and dev releases. It's possible an individual release may not be published. Please [open an issue](https://github.com/componentized/wasmtime/issues) if an important build is not available within a reasonable period of time.
 
 ## Community
