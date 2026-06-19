@@ -38,7 +38,7 @@ jobs:
       wasmtime-git-sha: ${{ steps.versions.outputs.wasmtime-git-sha }}
       additional-tags: ${{ steps.versions.outputs.additional-tags }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Resolve versions
       id: versions
       run: |
