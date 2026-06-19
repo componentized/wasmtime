@@ -21,7 +21,7 @@ jobs:
       git-sha-short: ${{ steps.versions.outputs.git-sha-short }}
       git-date: ${{ steps.versions.outputs.git-date }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Resolve versions
       id: versions
       run: |

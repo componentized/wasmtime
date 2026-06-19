@@ -30,7 +30,7 @@ jobs:
       wasmtime-lts-1-version-major: ${{ steps.versions.outputs.wasmtime-lts-1-version-major }}
       wasmtime-lts-1-version-minor: ${{ steps.versions.outputs.wasmtime-lts-1-version-minor }}
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Resolve versions
       id: versions
       run: |
