@@ -62,7 +62,7 @@ jobs:
       packages: write
       id-token: write
     needs: preflight
-    uses: ./.github/workflows/publish.yaml
+    uses: ./.github/workflows/publish-version.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-crate: "${{ inputs.wasmtime-crate }}"

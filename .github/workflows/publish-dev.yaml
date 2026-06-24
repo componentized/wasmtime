@@ -1,8 +1,12 @@
 name: Publish dev
 
 on:
-  schedule:
-  - cron: "51 * * * *"
+  workflow_call:
+    inputs:
+      git-ref:
+        description: git-ref version to build
+        type: string
+        default: refs/tags/dev
   workflow_dispatch:
     inputs:
       git-ref:
@@ -59,20 +63,12 @@ jobs:
             dev-${{ needs.preflight.outputs.git-sha-short }}-alpine
             dev-${{ needs.preflight.outputs.git-date }}-alpine
             dev-alpine
-    uses: ./.github/workflows/publish.yaml
+    uses: ./.github/workflows/publish-version.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-git-sha: ${{ needs.preflight.outputs.git-sha }}
       repository: dev
       tag: ${{ matrix.tag }}
       additional-tags: ${{ matrix.additional-tags }}
+      publish: ${{ github.ref == 'refs/heads/main' }}
     secrets: inherit
-
-  done:
-    # used as a non-matrix job for protected branches
-    name: Done
-    needs: build
-    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
-    runs-on: ubuntu-latest
-    steps:
-    - run: echo "That's all folks"
