@@ -10,8 +10,8 @@ on:
 
 jobs:
 
-  release:
-    name: Release
+  releases:
+    name: Releases
     permissions:
       packages: write
       id-token: write
