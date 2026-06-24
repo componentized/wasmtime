@@ -18,7 +18,7 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
       - name: Set PR to auto-merge
-        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' && steps.metadata.outputs.dependency-name == 'wasmtime-cli'
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch' && steps.metadata.outputs.dependency-names == 'wasmtime-cli'
         run: gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
