@@ -133,7 +133,7 @@ jobs:
           wasmtime-crate: ''
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
           force: ${{ needs.preflight.outputs.common-changed == 'true' }}
-    uses: ./.github/workflows/publish-version.yaml
+    uses: ./.github/workflows/publish-wasmtime.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-crate: "${{ matrix.wasmtime-crate }}"

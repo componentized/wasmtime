@@ -1,4 +1,4 @@
-name: Publish version
+name: Publish wasmtime
 
 on:
   workflow_call:
@@ -55,7 +55,7 @@ env:
 jobs:
 
   preflight:
-    name: Preflight
+    name: Preflight ${{ inputs.tag }}
     runs-on: ubuntu-latest
     outputs:
       existing-digest: ${{ steps.existing.outputs.digest }}
@@ -97,7 +97,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
 
   build:
-    name: Build ${{ matrix.os }}/${{ matrix.arch }}
+    name: Build ${{ inputs.tag }} ${{ matrix.os }}/${{ matrix.arch }}
     needs: preflight
     if: ${{ inputs.force || ! needs.preflight.outputs.existing-digest }}
     strategy:
@@ -157,7 +157,7 @@ jobs:
         retention-days: 7
 
   assemble:
-    name: Assemble
+    name: Assemble ${{ inputs.tag }}
     needs: build
     runs-on: ubuntu-latest
     outputs:
@@ -210,7 +210,7 @@ jobs:
         retention-days: 7
 
   test:
-    name: Test ${{ matrix.os }}/${{ matrix.arch }}
+    name: Test ${{ inputs.tag }} ${{ matrix.os }}/${{ matrix.arch }}
     needs: assemble
     outputs:
       digest: ${{ needs.assemble.outputs.digest }}
@@ -255,7 +255,7 @@ jobs:
         echo "${listing}" | grep -q linux/arm64
 
   publish:
-    name: Publish
+    name: Publish ${{ inputs.tag }}
     needs: test
     if: inputs.publish
     runs-on: ubuntu-latest
