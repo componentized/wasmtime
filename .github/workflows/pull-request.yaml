@@ -38,13 +38,13 @@ jobs:
           - 'rust-toolchain.toml'
           - 'versions/cargo-auditable/**'
           wasmtime-stable:
-          - 'versions/stable/**'
+          - 'versions/wasmtime/stable/**'
           wasmtime-stable-1:
-          - 'versions/stable-1/**'
+          - 'versions/wasmtime/stable-1/**'
           wasmtime-lts:
-          - 'versions/lts/**'
+          - 'versions/wasmtime/lts/**'
           wasmtime-lts-1:
-          - 'versions/lts-1/**'
+          - 'versions/wasmtime/lts-1/**'
     - name: Resolve versions
       id: versions
       run: |
@@ -57,25 +57,25 @@ jobs:
         echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
         # stable
-        wasmtime_stable_version="$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_stable_version="$(cd versions/wasmtime/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         wasmtime_stable_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_stable_version}" --template '{{.sha}}')"
         echo "wasmtime-stable-version=${wasmtime_stable_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-stable-git-sha=${wasmtime_stable_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
         # stable, minus 1
-        wasmtime_stable_1_version="$(cd versions/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_stable_1_version="$(cd versions/wasmtime/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         wasmtime_stable_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_stable_1_version}" --template '{{.sha}}')"
         echo "wasmtime-stable-1-version=${wasmtime_stable_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-stable-1-git-sha=${wasmtime_stable_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
         # lts
-        wasmtime_lts_version="$(cd versions/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_lts_version="$(cd versions/wasmtime/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         wasmtime_lts_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_version}" --template '{{.sha}}')"
         echo "wasmtime-lts-version=${wasmtime_lts_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-git-sha=${wasmtime_lts_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
         # lts, minus 1
-        wasmtime_lts_1_version="$(cd versions/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+        wasmtime_lts_1_version="$(cd versions/wasmtime/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         wasmtime_lts_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_1_version}" --template '{{.sha}}')"
         echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-git-sha=${wasmtime_lts_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
