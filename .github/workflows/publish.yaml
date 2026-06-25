@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rust-toolchain: ${{ steps.versions.outputs.rust-toolchain }}
+      wasmtime-dev-git-sha: ${{ steps.versions.outputs.wasmtime-dev-git-sha }}
+      wasmtime-dev-git-sha-short: ${{ steps.versions.outputs.wasmtime-dev-git-sha-short }}
+      wasmtime-dev-git-date: ${{ steps.versions.outputs.wasmtime-dev-git-date }}
       wasmtime-stable-git-sha: ${{ steps.versions.outputs.wasmtime-stable-git-sha }}
       wasmtime-stable-version: ${{ steps.versions.outputs.wasmtime-stable-version }}
       wasmtime-stable-version-major: ${{ steps.versions.outputs.wasmtime-stable-version-major }}
@@ -33,9 +36,6 @@ jobs:
       wasmtime-lts-1-version: ${{ steps.versions.outputs.wasmtime-lts-1-version }}
       wasmtime-lts-1-version-major: ${{ steps.versions.outputs.wasmtime-lts-1-version-major }}
       wasmtime-lts-1-version-minor: ${{ steps.versions.outputs.wasmtime-lts-1-version-minor }}
-      wasmtime-dev-git-sha: ${{ steps.versions.outputs.wasmtime-dev-git-sha }}
-      wasmtime-dev-git-sha-short: ${{ steps.versions.outputs.wasmtime-dev-git-sha-short }}
-      wasmtime-dev-git-date: ${{ steps.versions.outputs.wasmtime-dev-git-date }}
     steps:
     - uses: actions/checkout@v7
     - name: Resolve versions
@@ -44,6 +44,14 @@ jobs:
         set -euo pipefail
 
         echo "rust-toolchain=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
+
+        # dev
+        wasmtime_dev_git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/refs/tags/dev --template '{{.sha}} {{.commit.committer.date}}')
+        wasmtime_dev_git_sha="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f1)"
+        wasmtime_dev_git_date="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f2)"
+        echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-dev-git-sha-short=${wasmtime_dev_git_sha:0:7}" | tee -a "${GITHUB_OUTPUT}"
+        echo "wasmtime-dev-git-date=${wasmtime_dev_git_date:0:10}" | tee -a "${GITHUB_OUTPUT}"
 
         # stable
         wasmtime_stable_version="$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
@@ -76,14 +84,6 @@ jobs:
         echo "wasmtime-lts-1-version-major=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-version-minor=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-git-sha=${wasmtime_lts_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
-
-        # dev
-        wasmtime_dev_git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/refs/tags/dev --template '{{.sha}} {{.commit.committer.date}}')
-        wasmtime_dev_git_sha="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f1)"
-        wasmtime_dev_git_date="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f2)"
-        echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-dev-git-sha-short=${wasmtime_dev_git_sha:0:7}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-dev-git-date=${wasmtime_dev_git_date:0:10}" | tee -a "${GITHUB_OUTPUT}"
       env:
         GH_TOKEN: ${{ github.token }}
 
@@ -180,12 +180,3 @@ jobs:
       additional-tags: "${{ matrix.additional-tags }}"
       publish: ${{ github.ref == 'refs/heads/main' }}
     secrets: inherit
-
-  done:
-    # used as a non-matrix job for protected branches
-    name: Done
-    needs: build
-    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
-    runs-on: ubuntu-latest
-    steps:
-    - run: echo "That's all folks"
