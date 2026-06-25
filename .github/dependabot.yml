@@ -15,27 +15,28 @@ updates:
   schedule:
     interval: daily
 - package-ecosystem: cargo
-  directory: "/versions/stable"
-  allow:
-  - dependency-name: "wasmtime-cli"
-  schedule:
-    interval: daily
-- package-ecosystem: cargo
-  directory: "/versions/stable-1"
+  directory: "/versions/wasmtime/stable"
   allow:
   - dependency-name: "wasmtime-cli"
     update-types: ["version-update:semver-patch", "version-update:semver-minor"]
   schedule:
     interval: daily
 - package-ecosystem: cargo
-  directory: "/versions/lts"
+  directory: "/versions/wasmtime/stable-1"
   allow:
   - dependency-name: "wasmtime-cli"
     update-types: ["version-update:semver-patch", "version-update:semver-minor"]
   schedule:
     interval: daily
 - package-ecosystem: cargo
-  directory: "/versions/lts-1"
+  directory: "/versions/wasmtime/lts"
+  allow:
+  - dependency-name: "wasmtime-cli"
+    update-types: ["version-update:semver-patch", "version-update:semver-minor"]
+  schedule:
+    interval: daily
+- package-ecosystem: cargo
+  directory: "/versions/wasmtime/lts-1"
   allow:
   - dependency-name: "wasmtime-cli"
     update-types: ["version-update:semver-patch", "version-update:semver-minor"]
