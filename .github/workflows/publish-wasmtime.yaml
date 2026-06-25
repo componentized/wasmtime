@@ -1,0 +1,307 @@
+name: Publish wasmtime
+
+on:
+  workflow_call:
+    inputs:
+      wasmtime-crate:
+        description: wasmtime crate version to build
+        type: string
+      wasmtime-git-sha:
+        description: wasmtime git sha to build
+        required: true
+        type: string
+      rust-toolchain:
+        description: rust toolchain to build with
+        required: true
+        type: string
+      repository:
+        description: nested image repository to publish into
+        type: string
+        default: ""
+      tag:
+        description: primary image tag to publish
+        required: true
+        type: string
+      additional-tags:
+        description: new line delimited set of additional tags to add to the published image
+        type: string
+      publish:
+        description: publish built image
+        type: boolean
+        default: true
+      force:
+        description: force overwriting an existing image
+        type: boolean
+        default: false
+      builder-image:
+        description: image used to build wasmtime
+        type: string
+      base-image:
+        description: base image used for running wasmtime
+        type: string
+
+concurrency:
+  group: ${{ case(inputs.publish, inputs.tag, format('run-{0}-{1}', github.run_id, inputs.tag)) }}
+  queue: max
+
+env:
+  repository: "${{
+      case(inputs.repository == '',
+        format('ghcr.io/{0}', github.repository),
+        format('ghcr.io/{0}/{1}', github.repository, inputs.repository)
+      )
+    }}"
+
+jobs:
+
+  preflight:
+    name: Preflight ${{ inputs.tag }}
+    runs-on: ubuntu-latest
+    outputs:
+      existing-digest: ${{ steps.existing.outputs.digest }}
+      builder: ${{ steps.existing.outputs.builder }}
+      builder-digest: ${{ steps.existing.outputs.builder-digest }}
+      base: ${{ steps.existing.outputs.base }}
+      base-digest: ${{ steps.existing.outputs.base-digest }}
+      wasmtime-commit-date: ${{ steps.existing.outputs.wasmtime-commit-date }}
+      cargo-auditable-version: ${{ steps.existing.outputs.cargo-auditable-version }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install crane
+      uses: reconcilerio/install-crane-action@v1
+    - name: Check for existing image
+      id: existing
+      run: |
+        set -euo pipefail
+
+        digest="$(crane digest "${{ env.repository }}:${{ inputs.tag }}" || echo -n '')"
+        echo "digest=${digest}" | tee -a "${GITHUB_OUTPUT}"
+
+        builder="${{ inputs.builder-image || case(endsWith(inputs.tag, '-alpine') , 'rust:alpine', 'rust:latest') }}"
+        echo "builder=$(echo "${builder}" | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
+        builder_digest="$(crane digest "${builder}")"
+        echo "builder-digest=${builder_digest}" | tee -a "${GITHUB_OUTPUT}"
+
+        base="${{ inputs.base-image || case(endsWith(inputs.tag, '-alpine') , 'alpine', 'cgr.dev/chainguard/glibc-dynamic:latest') }}"
+        echo "base=$(echo "${base}" | cut -d'@' -f1)" | tee -a "${GITHUB_OUTPUT}"
+        base_digest="$(crane digest "${base}")"
+        echo "base-digest=${base_digest}" | tee -a "${GITHUB_OUTPUT}"
+
+        wasmtime_commit_date="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-sha }}" --template '{{.commit.committer.date}}')"
+        echo "wasmtime-commit-date=${wasmtime_commit_date}" | tee -a "${GITHUB_OUTPUT}"
+
+        cargo_auditable_version="$(cd versions/cargo-auditable ; yq -p toml -oj -r '.package[] | select(.name == "cargo-auditable") | .version' Cargo.lock)"
+        echo "cargo-auditable-version=${cargo_auditable_version}" | tee -a "${GITHUB_OUTPUT}"
+
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+  build:
+    name: Build ${{ inputs.tag }} ${{ matrix.os }}/${{ matrix.arch }}
+    needs: preflight
+    if: ${{ inputs.force || ! needs.preflight.outputs.existing-digest }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - runs-on: ubuntu-24.04
+          os: linux
+          arch: amd64
+        - runs-on: ubuntu-24.04-arm
+          os: linux
+          arch: arm64
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Build
+      run: |
+        set -euo pipefail
+
+        docker buildx create \
+          --name container \
+          --driver=docker-container \
+          default
+
+        docker buildx build \
+          --builder container \
+          --output type=oci,dest="./wasmtime-${{ inputs.tag }}-${{ matrix.arch }}.tar" \
+          --build-arg "SOURCE_DATE_EPOCH=$(date -d "${{ needs.preflight.outputs.wasmtime-commit-date }}" +%s)" \
+          --build-arg "wasmtime_crate=${{ inputs.wasmtime-crate }}" \
+          --build-arg "wasmtime_git_rev=${{ inputs.wasmtime-git-sha }}" \
+          --build-arg "cargo_auditable_version=${{ needs.preflight.outputs.cargo-auditable-version }}" \
+          --build-arg "from_build=${{ needs.preflight.outputs.builder }}@${{ needs.preflight.outputs.builder-digest }}" \
+          --build-arg "from_base=${{ needs.preflight.outputs.base }}@${{ needs.preflight.outputs.base-digest }}" \
+          --build-arg "rust_toolchain=${{ inputs.rust-toolchain }}" \
+          --label org.opencontainers.image.authors="Bytecode Alliance <https://bytecodealliance.org>" \
+          --label org.opencontainers.image.base.digest="${{ needs.preflight.outputs.base-digest }}" \
+          --label org.opencontainers.image.base.name="${{ needs.preflight.outputs.base }}" \
+          --label org.opencontainers.image.created="${{ needs.preflight.outputs.wasmtime-commit-date }}" \
+          --label org.opencontainers.image.description="A fast and secure runtime for WebAssembly. Packaged by Componentized." \
+          --label org.opencontainers.image.documentation="https://docs.wasmtime.dev" \
+          --label org.opencontainers.image.licenses="Apache-2.0" \
+          --label org.opencontainers.image.revision="${{ inputs.wasmtime-git-sha }}" \
+          --label org.opencontainers.image.source="https://github.com/bytecodealliance/wasmtime" \
+          --label org.opencontainers.image.title="wasmtime" \
+          --label org.opencontainers.image.vendor="Componentized <https://github.com/componentized>" \
+          --label org.opencontainers.image.version="${{ inputs.tag }}" \
+          --label org.opencontainers.image.url="${{ github.server_url }}/${{ github.repository }}" \
+          --sbom=true \
+          .
+
+        mkdir "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
+        tar -xvf "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}.tar" -C "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
+    - uses: actions/upload-artifact@v7
+      with:
+        name: "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
+        path: "wasmtime-${{ inputs.tag }}-${{ matrix.arch }}"
+        retention-days: 7
+
+  assemble:
+    name: Assemble ${{ inputs.tag }}
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.assemble.outputs.digest }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install crane
+      uses: reconcilerio/install-crane-action@v1
+    - name: OCI registry
+      uses: reconcilerio/registry@v1
+    - name: Download staged image (amd64)
+      uses: actions/download-artifact@v8
+      with:
+        name: "wasmtime-${{ inputs.tag }}-amd64"
+        path: "wasmtime-${{ inputs.tag }}-amd64"
+    - name: Download staged image (arm64)
+      uses: actions/download-artifact@v8
+      with:
+        name: "wasmtime-${{ inputs.tag }}-arm64"
+        path: "wasmtime-${{ inputs.tag }}-arm64"
+    - name: Assemble
+      id: assemble
+      run: |
+        set -euo pipefail
+
+        crane push \
+          "wasmtime-${{ inputs.tag }}-amd64" \
+          registry.local/wasmtime:amd64
+
+        crane push \
+          "wasmtime-${{ inputs.tag }}-arm64" \
+          registry.local/wasmtime:arm64
+
+        crane index append \
+          -m registry.local/wasmtime:amd64 \
+          -m registry.local/wasmtime:arm64 \
+          -t registry.local/wasmtime
+
+        digest="$(crane digest registry.local/wasmtime)"
+        echo "digest=${digest}" >> "${GITHUB_OUTPUT}"
+
+        crane pull --format oci \
+          "registry.local/wasmtime@${digest}" \
+          "wasmtime-${{ inputs.tag }}"
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: "wasmtime-${{ inputs.tag }}"
+        path: "wasmtime-${{ inputs.tag }}"
+        retention-days: 7
+
+  test:
+    name: Test ${{ inputs.tag }} ${{ matrix.os }}/${{ matrix.arch }}
+    needs: assemble
+    outputs:
+      digest: ${{ needs.assemble.outputs.digest }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - runs-on: ubuntu-24.04
+          os: linux
+          arch: amd64
+        - runs-on: ubuntu-24.04-arm
+          os: linux
+          arch: arm64
+    runs-on: ${{ matrix.runs-on }}
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install crane
+      uses: reconcilerio/install-crane-action@v1
+    - name: OCI registry
+      uses: reconcilerio/registry@v1
+    - name: Download staged image
+      uses: actions/download-artifact@v8
+      with:
+        name: "wasmtime-${{ inputs.tag }}"
+        path: "wasmtime-${{ inputs.tag }}"
+    - name: Relocate image
+      run: |
+        crane push \
+          "wasmtime-${{ inputs.tag }}" \
+          "registry.local/wasmtime@${{ needs.assemble.outputs.digest }}"
+    # TODO test image
+    - name: Run container
+      run: docker run --rm "registry.local/wasmtime@${{ needs.assemble.outputs.digest }}"
+    - name: Check expected images in index
+      run: |
+        set -euo pipefail
+
+        listing=$(crane index list "registry.local/wasmtime@${{ needs.assemble.outputs.digest }}")
+        echo "${listing}"
+
+        echo "${listing}" | grep -q linux/amd64
+        echo "${listing}" | grep -q linux/arm64
+
+  publish:
+    name: Publish ${{ inputs.tag }}
+    needs: test
+    if: inputs.publish
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      id-token: write
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install crane
+      uses: reconcilerio/install-crane-action@v1
+    - name: Install cosign
+      uses: sigstore/cosign-installer@v4.1.2
+    - name: Download staged image
+      uses: actions/download-artifact@v8
+      with:
+        name: "wasmtime-${{ inputs.tag }}"
+        path: "wasmtime-${{ inputs.tag }}"
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Push
+      run: |
+        crane push \
+          "wasmtime-${{ inputs.tag }}" \
+          "${{ env.repository }}@${{ needs.test.outputs.digest }}"
+    - name: Sign
+      run: |
+        cosign sign --yes \
+          "${{ env.repository }}@${{ needs.test.outputs.digest }}"
+    - name: Additional tags
+      if: inputs.additional-tags
+      run: |
+        set -euo pipefail
+
+        additional_tags="$(echo "${{ inputs.additional-tags }}" | awk '{$1=$1};1' | grep -v -e "^$")"
+
+        while IFS= read -r tag; do
+          crane tag \
+            "${{ env.repository }}@${{ needs.test.outputs.digest }}" \
+            "${tag}"
+        done <<< "${additional_tags}"
+    - name: Primary tag
+      run: |
+        crane tag \
+            "${{ env.repository }}@${{ needs.test.outputs.digest }}" \
+            "${{ inputs.tag }}"

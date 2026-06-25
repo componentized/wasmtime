@@ -12,6 +12,7 @@ jobs:
       pull-requests: read
     outputs:
       rust-toolchain: ${{ steps.versions.outputs.rust-toolchain }}
+      wasmtime-dev-git-sha: ${{ steps.versions.outputs.wasmtime-dev-git-sha }}
       wasmtime-stable-changed: ${{ steps.filter.outputs.wasmtime-stable }}
       wasmtime-stable-git-sha: ${{ steps.versions.outputs.wasmtime-stable-git-sha }}
       wasmtime-stable-version: ${{ steps.versions.outputs.wasmtime-stable-version }}
@@ -24,7 +25,6 @@ jobs:
       wasmtime-lts-1-changed: ${{ steps.filter.outputs.wasmtime-lts-1 }}
       wasmtime-lts-1-git-sha: ${{ steps.versions.outputs.wasmtime-lts-1-git-sha }}
       wasmtime-lts-1-version: ${{ steps.versions.outputs.wasmtime-lts-1-version }}
-      wasmtime-dev-git-sha: ${{ steps.versions.outputs.wasmtime-dev-git-sha }}
       common-changed: ${{ steps.filter.outputs.common }}
     steps:
     - uses: actions/checkout@v7
@@ -52,6 +52,10 @@ jobs:
 
         echo "rust-toolchain=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
+        # dev
+        wasmtime_dev_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/dev" --template '{{.sha}}')"
+        echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+
         # stable
         wasmtime_stable_version="$(cd versions/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
         wasmtime_stable_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_stable_version}" --template '{{.sha}}')"
@@ -75,10 +79,6 @@ jobs:
         wasmtime_lts_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_1_version}" --template '{{.sha}}')"
         echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
         echo "wasmtime-lts-1-git-sha=${wasmtime_lts_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
-
-        # dev
-        wasmtime_dev_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/dev" --template '{{.sha}}')"
-        echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
       env:
         GH_TOKEN: ${{ github.token }}
 
@@ -93,6 +93,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+        - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          wasmtime-crate: ''
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          force: ${{ needs.preflight.outputs.common-changed == 'true' }}
+        - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
+          wasmtime-crate: ''
+          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          force: ${{ needs.preflight.outputs.common-changed == 'true' }}
         - tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
           wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
@@ -125,15 +133,7 @@ jobs:
           wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
           wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
           force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-        - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
-          wasmtime-crate: ''
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
-          force: ${{ needs.preflight.outputs.common-changed == 'true' }}
-        - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
-          wasmtime-crate: ''
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
-          force: ${{ needs.preflight.outputs.common-changed == 'true' }}
-    uses: ./.github/workflows/publish.yaml
+    uses: ./.github/workflows/publish-wasmtime.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
       wasmtime-crate: "${{ matrix.wasmtime-crate }}"
