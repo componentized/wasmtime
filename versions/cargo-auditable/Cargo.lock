@@ -36,17 +36,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo-auditabl"
-version = "0.1.0"
-dependencies = [
- "cargo-auditable",
-]
-
-[[package]]
 name = "cargo-auditable"
-version = "0.7.4"
+version = "0.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c30906ad94da619129898d934bdaa6264e947a59d575e7e4c70194e95d4d633d"
+checksum = "cd121127b91d68074770a620544182345d7db56d03dcbd85316ab11e54a5b1bc"
 dependencies = [
  "auditable-serde",
  "cargo_metadata",
@@ -56,6 +49,13 @@ dependencies = [
  "serde",
  "serde_json",
  "wasm-gen",
+]
+
+[[package]]
+name = "cargo-auditable-version"
+version = "0.1.0"
+dependencies = [
+ "cargo-auditable",
 ]
 
 [[package]]
