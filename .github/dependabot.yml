@@ -21,6 +21,7 @@ updates:
         update-types:
           ["version-update:semver-patch", "version-update:semver-minor"]
     cooldown:
+      default-days: 0
       exclude: ["*"]
     schedule:
       interval: daily
@@ -31,6 +32,7 @@ updates:
         update-types:
           ["version-update:semver-patch", "version-update:semver-minor"]
     cooldown:
+      default-days: 0
       exclude: ["*"]
     schedule:
       interval: daily
@@ -41,6 +43,7 @@ updates:
         update-types:
           ["version-update:semver-patch", "version-update:semver-minor"]
     cooldown:
+      default-days: 0
       exclude: ["*"]
     schedule:
       interval: daily
@@ -51,6 +54,7 @@ updates:
         update-types:
           ["version-update:semver-patch", "version-update:semver-minor"]
     cooldown:
+      default-days: 0
       exclude: ["*"]
     schedule:
       interval: daily
