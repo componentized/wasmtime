@@ -3,13 +3,14 @@ name: Dependabot auto-merge
 on:
   push:
     branches:
-    - 'dependabot/cargo/versions/wasmtime/**'
+      - "dependabot/cargo/versions/wasmtime/**"
 
 jobs:
   dependabot:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]' && github.repository == 'componentized/wasmtime'
     steps:
+      - uses: actions/checkout@v7
       - name: Set PR to auto-merge
         run: gh pr merge --auto --squash ${{ github.ref_name }}
         env:
