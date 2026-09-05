@@ -1,0 +1,7 @@
+[package]
+name = "nex"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wasmtime-cli = "=49.0.0-rc.1"
