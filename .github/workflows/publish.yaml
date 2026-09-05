@@ -3,15 +3,14 @@ name: Publish
 on:
   push:
     branches:
-    - '**'
-    - '!dependabot/**'
+      - "**"
+      - "!dependabot/**"
   schedule:
-  - cron: "51 * * * *"
+    - cron: "51 * * * *"
   workflow_dispatch:
     inputs: {}
 
 jobs:
-
   preflight:
     name: Preflight
     runs-on: ubuntu-latest
@@ -20,6 +19,10 @@ jobs:
       wasmtime-dev-git-sha: ${{ steps.versions.outputs.wasmtime-dev-git-sha }}
       wasmtime-dev-git-sha-short: ${{ steps.versions.outputs.wasmtime-dev-git-sha-short }}
       wasmtime-dev-git-date: ${{ steps.versions.outputs.wasmtime-dev-git-date }}
+      wasmtime-next-git-sha: ${{ steps.versions.outputs.wasmtime-next-git-sha }}
+      wasmtime-next-version: ${{ steps.versions.outputs.wasmtime-next-version }}
+      wasmtime-next-version-major: ${{ steps.versions.outputs.wasmtime-next-version-major }}
+      wasmtime-next-version-minor: ${{ steps.versions.outputs.wasmtime-next-version-minor }}
       wasmtime-stable-git-sha: ${{ steps.versions.outputs.wasmtime-stable-git-sha }}
       wasmtime-stable-version: ${{ steps.versions.outputs.wasmtime-stable-version }}
       wasmtime-stable-version-major: ${{ steps.versions.outputs.wasmtime-stable-version-major }}
@@ -37,55 +40,63 @@ jobs:
       wasmtime-lts-1-version-major: ${{ steps.versions.outputs.wasmtime-lts-1-version-major }}
       wasmtime-lts-1-version-minor: ${{ steps.versions.outputs.wasmtime-lts-1-version-minor }}
     steps:
-    - uses: actions/checkout@v7
-    - name: Resolve versions
-      id: versions
-      run: |
-        set -euo pipefail
+      - uses: actions/checkout@v7
+      - name: Resolve versions
+        id: versions
+        run: |
+          set -euo pipefail
 
-        echo "rust-toolchain=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
+          echo "rust-toolchain=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
-        # dev
-        wasmtime_dev_git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/refs/tags/dev --template '{{.sha}} {{.commit.committer.date}}')
-        wasmtime_dev_git_sha="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f1)"
-        wasmtime_dev_git_date="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f2)"
-        echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-dev-git-sha-short=${wasmtime_dev_git_sha:0:7}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-dev-git-date=${wasmtime_dev_git_date:0:10}" | tee -a "${GITHUB_OUTPUT}"
+          # dev
+          wasmtime_dev_git_commit=$(gh api repos/bytecodealliance/wasmtime/commits/refs/tags/dev --template '{{.sha}} {{.commit.committer.date}}')
+          wasmtime_dev_git_sha="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f1)"
+          wasmtime_dev_git_date="$(echo "${wasmtime_dev_git_commit}" | cut -d' ' -f2)"
+          echo "wasmtime-dev-git-sha=${wasmtime_dev_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-dev-git-sha-short=${wasmtime_dev_git_sha:0:7}" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-dev-git-date=${wasmtime_dev_git_date:0:10}" | tee -a "${GITHUB_OUTPUT}"
 
-        # stable
-        wasmtime_stable_version="$(cd versions/wasmtime/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
-        wasmtime_stable_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_stable_version}" --template '{{.sha}}')"
-        echo "wasmtime-stable-version=${wasmtime_stable_version}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-stable-version-major=$(echo "${wasmtime_stable_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-stable-version-minor=$(echo "${wasmtime_stable_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-stable-git-sha=${wasmtime_stable_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+          # next
+          wasmtime_next_version="$(cd versions/wasmtime/next ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+          wasmtime_next_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_next_version}" --template '{{.sha}}')"
+          echo "wasmtime-next-version=${wasmtime_next_version}" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-next-version-major=$(echo "${wasmtime_next_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-next-version-minor=$(echo "${wasmtime_next_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-next-git-sha=${wasmtime_next_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
-        # stable, minus 1
-        wasmtime_stable_1_version="$(cd versions/wasmtime/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
-        wasmtime_stable_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_stable_1_version}" --template '{{.sha}}')"
-        echo "wasmtime-stable-1-version=${wasmtime_stable_1_version}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-stable-1-version-major=$(echo "${wasmtime_stable_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-stable-1-version-minor=$(echo "${wasmtime_stable_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-stable-1-git-sha=${wasmtime_stable_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+          # stable
+          wasmtime_stable_version="$(cd versions/wasmtime/stable ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+          wasmtime_stable_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_stable_version}" --template '{{.sha}}')"
+          echo "wasmtime-stable-version=${wasmtime_stable_version}" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-stable-version-major=$(echo "${wasmtime_stable_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-stable-version-minor=$(echo "${wasmtime_stable_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-stable-git-sha=${wasmtime_stable_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
-        # lts
-        wasmtime_lts_version="$(cd versions/wasmtime/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
-        wasmtime_lts_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_version}" --template '{{.sha}}')"
-        echo "wasmtime-lts-version=${wasmtime_lts_version}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-lts-version-major=$(echo "${wasmtime_lts_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-lts-version-minor=$(echo "${wasmtime_lts_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-lts-git-sha=${wasmtime_lts_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+          # stable, minus 1
+          wasmtime_stable_1_version="$(cd versions/wasmtime/stable-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+          wasmtime_stable_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_stable_1_version}" --template '{{.sha}}')"
+          echo "wasmtime-stable-1-version=${wasmtime_stable_1_version}" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-stable-1-version-major=$(echo "${wasmtime_stable_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-stable-1-version-minor=$(echo "${wasmtime_stable_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-stable-1-git-sha=${wasmtime_stable_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
 
-        # lts, minus 1
-        wasmtime_lts_1_version="$(cd versions/wasmtime/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
-        wasmtime_lts_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_1_version}" --template '{{.sha}}')"
-        echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-lts-1-version-major=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-lts-1-version-minor=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
-        echo "wasmtime-lts-1-git-sha=${wasmtime_lts_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
-      env:
-        GH_TOKEN: ${{ github.token }}
+          # lts
+          wasmtime_lts_version="$(cd versions/wasmtime/lts ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+          wasmtime_lts_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_version}" --template '{{.sha}}')"
+          echo "wasmtime-lts-version=${wasmtime_lts_version}" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-lts-version-major=$(echo "${wasmtime_lts_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-lts-version-minor=$(echo "${wasmtime_lts_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-lts-git-sha=${wasmtime_lts_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+
+          # lts, minus 1
+          wasmtime_lts_1_version="$(cd versions/wasmtime/lts-1 ; yq -p toml -oj -r '.package[] | select(.name == "wasmtime-cli") | .version' Cargo.lock)"
+          wasmtime_lts_1_git_sha="$(gh api "repos/bytecodealliance/wasmtime/commits/refs/tags/v${wasmtime_lts_1_version}" --template '{{.sha}}')"
+          echo "wasmtime-lts-1-version=${wasmtime_lts_1_version}" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-lts-1-version-major=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-lts-1-version-minor=$(echo "${wasmtime_lts_1_version}" | cut -d. -f1-2)" | tee -a "${GITHUB_OUTPUT}"
+          echo "wasmtime-lts-1-git-sha=${wasmtime_lts_1_git_sha}" | tee -a "${GITHUB_OUTPUT}"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   build:
     name: Build ${{ matrix.tag }}
@@ -97,79 +108,91 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
-          repository: dev
-          tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
-          additional-tags: |
-            dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha-short }}
-            dev-${{ needs.preflight.outputs.wasmtime-dev-git-date }}
-            dev
-            latest
-        - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
-          repository: dev
-          tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
-          additional-tags: |
-            dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha-short }}-alpine
-            dev-${{ needs.preflight.outputs.wasmtime-dev-git-date }}-alpine
-            dev-alpine
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-stable-version-minor }}
-            v${{ needs.preflight.outputs.wasmtime-stable-version-major }}
-            stable
-            latest
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-stable-version-minor }}-alpine
-            v${{ needs.preflight.outputs.wasmtime-stable-version-major }}-alpine
-            stable-alpine
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}
-            v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}
-            stable-1
-            latest-1
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}-alpine
-            v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}-alpine
-            stable-1-alpine
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-lts-version-major }}
-            v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
-            lts
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-lts-version-major }}-alpine
-            v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}-alpine
-            lts-alpine
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
-            v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
-            lts-1
-        - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
-          wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
-          tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
-          additional-tags: |
-            v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}-alpine
-            v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}-alpine
-            lts-1-alpine
+          - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+            repository: dev
+            tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+            additional-tags: |
+              dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha-short }}
+              dev-${{ needs.preflight.outputs.wasmtime-dev-git-date }}
+              dev
+              latest
+          - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+            repository: dev
+            tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
+            additional-tags: |
+              dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha-short }}-alpine
+              dev-${{ needs.preflight.outputs.wasmtime-dev-git-date }}-alpine
+              dev-alpine
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-next-version }}
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-next-version-minor }}
+              v${{ needs.preflight.outputs.wasmtime-next-version-major }}
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-next-version }}-alpine
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-next-version-minor }}-alpine
+              v${{ needs.preflight.outputs.wasmtime-next-version-major }}-alpine
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-stable-version-minor }}
+              v${{ needs.preflight.outputs.wasmtime-stable-version-major }}
+              stable
+              latest
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-stable-version-minor }}-alpine
+              v${{ needs.preflight.outputs.wasmtime-stable-version-major }}-alpine
+              stable-alpine
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}
+              v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}
+              stable-1
+              latest-1
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}-alpine
+              v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}-alpine
+              stable-1-alpine
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-lts-version-major }}
+              v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
+              lts
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-lts-version-major }}-alpine
+              v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}-alpine
+              lts-alpine
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
+              v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
+              lts-1
+          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
+            additional-tags: |
+              v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}-alpine
+              v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}-alpine
+              lts-1-alpine
     uses: ./.github/workflows/publish-wasmtime.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"

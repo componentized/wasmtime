@@ -15,6 +15,17 @@ updates:
     schedule:
       interval: daily
   - package-ecosystem: cargo
+    directory: "/versions/wasmtime/next"
+    allow:
+      - dependency-name: "wasmtime-cli"
+        update-types:
+          ["version-update:semver-patch", "version-update:semver-minor"]
+    cooldown:
+      default-days: 0
+      exclude: ["*"]
+    schedule:
+      interval: daily
+  - package-ecosystem: cargo
     directory: "/versions/wasmtime/stable"
     allow:
       - dependency-name: "wasmtime-cli"
