@@ -37,9 +37,9 @@ dependencies = [
 
 [[package]]
 name = "cargo-auditable"
-version = "0.7.5"
+version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd121127b91d68074770a620544182345d7db56d03dcbd85316ab11e54a5b1bc"
+checksum = "26d8fb7a4422b2aea452c301a30bac8528ff54ad89ef300d6ad80dcfb43aef6a"
 dependencies = [
  "auditable-serde",
  "cargo_metadata",
@@ -154,9 +154,9 @@ checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 
 [[package]]
 name = "miniz_oxide"
-version = "0.8.9"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
+checksum = "b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c"
 dependencies = [
  "adler2",
 ]
