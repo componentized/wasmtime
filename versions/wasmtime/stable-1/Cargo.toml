@@ -1,7 +1,0 @@
-[package]
-name = "stable-1"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-wasmtime-cli = "=48.0.5"
