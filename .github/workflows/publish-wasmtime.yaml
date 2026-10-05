@@ -89,7 +89,7 @@ jobs:
           wasmtime_commit_date="$(gh api "repos/bytecodealliance/wasmtime/commits/${{ inputs.wasmtime-git-sha }}" --template '{{.commit.committer.date}}')"
           echo "wasmtime-commit-date=${wasmtime_commit_date}" | tee -a "${GITHUB_OUTPUT}"
 
-          cargo_auditable_version="$(cd versions/cargo-auditable ; yq -p toml -oj -r '.package[] | select(.name == "cargo-auditable") | .version' Cargo.lock)"
+          cargo_auditable_version="$(cd versions/cargo-auditable ; yq -p toml -oj -r '.dependencies.cargo-auditable | sub("^=", "")' Cargo.toml)"
           echo "cargo-auditable-version=${cargo_auditable_version}" | tee -a "${GITHUB_OUTPUT}"
 
         env:

@@ -1,3 +1,4 @@
 target
 /wasmtime*
 .DS_Store
+/versions/**/Cargo.lock
