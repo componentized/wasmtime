@@ -18,10 +18,6 @@ updates:
     directory: "/versions/wasmtime/next"
     allow:
       - dependency-name: "wasmtime-cli"
-        update-types:
-          - version-update:semver-patch
-          - version-update:semver-minor
-          - version-update:semver-major
     cooldown:
       exclude: ["*"]
     schedule:
@@ -30,9 +26,9 @@ updates:
     directory: "/versions/wasmtime/stable"
     allow:
       - dependency-name: "wasmtime-cli"
-        update-types:
-          - version-update:semver-patch
-          - version-update:semver-minor
+    ignore:
+      - dependency-name: "wasmtime-cli"
+        update-types: ["version-update:semver-major"]
     cooldown:
       exclude: ["*"]
     schedule:
@@ -41,9 +37,9 @@ updates:
     directory: "/versions/wasmtime/stable-1"
     allow:
       - dependency-name: "wasmtime-cli"
-        update-types:
-          - version-update:semver-patch
-          - version-update:semver-minor
+    ignore:
+      - dependency-name: "wasmtime-cli"
+        update-types: ["version-update:semver-major"]
     cooldown:
       exclude: ["*"]
     schedule:
@@ -52,9 +48,9 @@ updates:
     directory: "/versions/wasmtime/lts"
     allow:
       - dependency-name: "wasmtime-cli"
-        update-types:
-          - version-update:semver-patch
-          - version-update:semver-minor
+    ignore:
+      - dependency-name: "wasmtime-cli"
+        update-types: ["version-update:semver-major"]
     cooldown:
       exclude: ["*"]
     schedule:
@@ -63,9 +59,9 @@ updates:
     directory: "/versions/wasmtime/lts-1"
     allow:
       - dependency-name: "wasmtime-cli"
-        update-types:
-          - version-update:semver-patch
-          - version-update:semver-minor
+    ignore:
+      - dependency-name: "wasmtime-cli"
+        update-types: ["version-update:semver-major"]
     cooldown:
       exclude: ["*"]
     schedule:
