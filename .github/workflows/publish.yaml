@@ -108,7 +108,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          - id: dev
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             repository: dev
             tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             additional-tags: |
@@ -116,26 +117,30 @@ jobs:
               dev-${{ needs.preflight.outputs.wasmtime-dev-git-date }}
               dev
               latest
-          - wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          - id: dev-alpine
+            wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             repository: dev
             tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
             additional-tags: |
               dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha-short }}-alpine
               dev-${{ needs.preflight.outputs.wasmtime-dev-git-date }}-alpine
               dev-alpine
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
+          - id: next
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-next-version }}
             additional-tags: |
               v${{ needs.preflight.outputs.wasmtime-next-version-minor }}
               v${{ needs.preflight.outputs.wasmtime-next-version-major }}
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
+          - id: next-alpine
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-next-version }}-alpine
             additional-tags: |
               v${{ needs.preflight.outputs.wasmtime-next-version-minor }}-alpine
               v${{ needs.preflight.outputs.wasmtime-next-version-major }}-alpine
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+          - id: stable
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
             additional-tags: |
@@ -143,14 +148,16 @@ jobs:
               v${{ needs.preflight.outputs.wasmtime-stable-version-major }}
               stable
               latest
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
+          - id: stable-alpine
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
             additional-tags: |
               v${{ needs.preflight.outputs.wasmtime-stable-version-minor }}-alpine
               v${{ needs.preflight.outputs.wasmtime-stable-version-major }}-alpine
               stable-alpine
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          - id: stable-1
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             additional-tags: |
@@ -158,35 +165,40 @@ jobs:
               v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}
               stable-1
               latest-1
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          - id: stable-1-alpine
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
             additional-tags: |
               v${{ needs.preflight.outputs.wasmtime-stable-1-version-minor }}-alpine
               v${{ needs.preflight.outputs.wasmtime-stable-1-version-major }}-alpine
               stable-1-alpine
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+          - id: lts
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
             additional-tags: |
               v${{ needs.preflight.outputs.wasmtime-lts-version-major }}
               v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}
               lts
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
+          - id: lts-alpine
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
             additional-tags: |
               v${{ needs.preflight.outputs.wasmtime-lts-version-major }}-alpine
               v${{ needs.preflight.outputs.wasmtime-lts-version-minor }}-alpine
               lts-alpine
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          - id: lts-1
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             additional-tags: |
               v${{ needs.preflight.outputs.wasmtime-lts-1-version-minor }}
               v${{ needs.preflight.outputs.wasmtime-lts-1-version-major }}
               lts-1
-          - wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          - id: lts-1-alpine
+            wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
             tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
             additional-tags: |
@@ -202,4 +214,5 @@ jobs:
       tag: "${{ matrix.tag }}"
       additional-tags: "${{ matrix.additional-tags }}"
       publish: ${{ github.ref == 'refs/heads/main' }}
+      id: "${{ matrix.id }}"
     secrets: inherit

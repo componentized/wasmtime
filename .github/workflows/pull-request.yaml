@@ -10,6 +10,7 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
+      wasmtime-bump: ${{ steps.versions.outputs.wasmtime-bump }}
       rust-toolchain: ${{ steps.versions.outputs.rust-toolchain }}
       wasmtime-dev-git-sha: ${{ steps.versions.outputs.wasmtime-dev-git-sha }}
       wasmtime-next-changed: ${{ steps.filter.outputs.wasmtime-next }}
@@ -53,6 +54,9 @@ jobs:
         id: versions
         run: |
           set -euo pipefail
+
+          # dependabot PRs that bump a wasmtime version only build the bumped version
+          echo "wasmtime-bump=${{ startsWith(github.head_ref, 'dependabot/cargo/versions/wasmtime/') }}" | tee -a "${GITHUB_OUTPUT}"
 
           echo "rust-toolchain=$(yq -r '.toolchain.channel' rust-toolchain.toml)" | tee -a "${GITHUB_OUTPUT}"
 
@@ -103,54 +107,78 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          - id: dev
+            tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             wasmtime-crate: ""
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             force: ${{ needs.preflight.outputs.common-changed == 'true' }}
-          - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' }}
+          - id: dev-alpine
+            tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
             wasmtime-crate: ""
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             force: ${{ needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-next-version }}
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' }}
+          - id: next
+            tag: v${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-next-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-next-version }}-alpine
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-next-changed != 'true' }}
+          - id: next-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-next-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-next-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-next-changed != 'true' }}
+          - id: stable
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-changed != 'true' }}
+          - id: stable-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-changed != 'true' }}
+          - id: stable-1
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-1-changed != 'true' }}
+          - id: stable-1-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-1-changed != 'true' }}
+          - id: lts
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-lts-changed != 'true' }}
+          - id: lts-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-lts-changed != 'true' }}
+          - id: lts-1
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-lts-1-changed != 'true' }}
+          - id: lts-1-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
+            skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-lts-1-changed != 'true' }}
     uses: ./.github/workflows/publish-wasmtime.yaml
     with:
       rust-toolchain: "${{ needs.preflight.outputs.rust-toolchain }}"
@@ -159,6 +187,8 @@ jobs:
       tag: "${{ matrix.tag }}"
       publish: false
       force: ${{ matrix.force }}
+      skip: ${{ matrix.skip }}
+      id: "${{ matrix.id }}"
     secrets: inherit
 
   done:
