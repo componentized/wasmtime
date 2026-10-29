@@ -107,62 +107,74 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
+          - id: dev
+            tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             wasmtime-crate: ""
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             force: ${{ needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' }}
-          - tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
+          - id: dev-alpine
+            tag: dev-${{ needs.preflight.outputs.wasmtime-dev-git-sha }}-alpine
             wasmtime-crate: ""
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-dev-git-sha }}
             force: ${{ needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-next-version }}
+          - id: next
+            tag: v${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-next-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-next-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-next-version }}-alpine
+          - id: next-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-next-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-next-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-next-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-next-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-next-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
+          - id: stable
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
+          - id: stable-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
+          - id: stable-1
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-1-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
+          - id: stable-1-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-stable-1-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-stable-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-stable-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-stable-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-stable-1-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
+          - id: lts
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-lts-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
+          - id: lts-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-lts-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
+          - id: lts-1
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
             skip: ${{ needs.preflight.outputs.wasmtime-bump == 'true' && needs.preflight.outputs.wasmtime-lts-1-changed != 'true' }}
-          - tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
+          - id: lts-1-alpine
+            tag: v${{ needs.preflight.outputs.wasmtime-lts-1-version }}-alpine
             wasmtime-crate: ${{ needs.preflight.outputs.wasmtime-lts-1-version }}
             wasmtime-git-sha: ${{ needs.preflight.outputs.wasmtime-lts-1-git-sha }}
             force: ${{ needs.preflight.outputs.wasmtime-lts-1-changed == 'true' || needs.preflight.outputs.common-changed == 'true' }}
@@ -176,6 +188,7 @@ jobs:
       publish: false
       force: ${{ matrix.force }}
       skip: ${{ matrix.skip }}
+      id: "${{ matrix.id }}"
     secrets: inherit
 
   done:
