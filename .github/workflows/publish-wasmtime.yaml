@@ -33,6 +33,10 @@ on:
         description: force overwriting an existing image
         type: boolean
         default: false
+      skip:
+        description: skip all jobs, useful to exclude an entry from a calling matrix
+        type: boolean
+        default: false
       builder-image:
         description: image used to build wasmtime
         type: string
@@ -55,6 +59,7 @@ env:
 jobs:
   preflight:
     name: Preflight ${{ inputs.tag }}
+    if: ${{ ! inputs.skip }}
     runs-on: ubuntu-latest
     outputs:
       existing-digest: ${{ steps.existing.outputs.digest }}
@@ -296,7 +301,7 @@ jobs:
   tag:
     name: Tag ${{ inputs.tag }}
     needs: publish
-    if: always() && !failure() && !cancelled() && inputs.publish && inputs.additional-tags
+    if: always() && !failure() && !cancelled() && !inputs.skip && inputs.publish && inputs.additional-tags
     runs-on: ubuntu-latest
     permissions:
       packages: write
