@@ -194,8 +194,17 @@ jobs:
   done:
     # used as a non-matrix job for protected branches
     name: Done
-    needs: build
-    if: always() && (needs.build.result == 'success' || needs.build.result == 'skipped')
+    needs:
+      - preflight
+      - build
+    # always run so this check reports failure instead of being skipped; branch
+    # protection treats a skipped required check as passing
+    if: always()
     runs-on: ubuntu-latest
     steps:
+      - name: Check results
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: |
+          echo "One or more required jobs failed or were cancelled"
+          exit 1
       - run: echo "That's all folks"
